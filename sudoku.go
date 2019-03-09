@@ -612,17 +612,26 @@ func main() {
 	test := s.getCandidateRow(1)
 	// poss := ucpos(test)
 	nums := uniqueNumbers(test)
-	foo := NewPermutation(nums, func(idxs []int) {
+	visitf := func(idxs []int) {
 		out := make([]int8, len(idxs))
 
 		for i, n := range idxs {
 			out[i] = nums[n]
 		}
 		fmt.Println("visit", out)
-	})
+	}
+
+	foo := Permutation(nums, visitf)
 	fmt.Println("permutation test", nums, foo)
 
 	for foo.Next() {
 		foo.Visit()
+	}
+
+	bar := Combination(nums, 2, visitf)
+	fmt.Println("combination test", nums, bar)
+
+	for bar.Next() {
+		bar.Visit()
 	}
 }

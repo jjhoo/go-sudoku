@@ -19,83 +19,91 @@ import (
 	"reflect"
 )
 
-type permutation struct {
-	ajs    []int
+type combination struct {
+	cjs    []int
 	length int
+	koo    int
+	j      int
+	k      int
 
 	visitFlag bool
 	visit     func([]int)
 }
 
-func Permutation(slice interface{}, visitf func([]int)) permutation {
-	tmp := permutation{visit: visitf, visitFlag: true}
+// Knuth, algorithm T
+func Combination(slice interface{}, koo int, visitf func([]int)) combination {
+	tmp := combination{visit: visitf, visitFlag: true,
+		koo: koo, j: koo, k: koo}
 
 	xs := reflect.ValueOf(slice)
 	tmp.length = xs.Len()
 
-	ajs := make([]int, tmp.length+1)
+	cjs := make([]int, koo+1)
 
-	for i := 0; i <= tmp.length; i++ {
-		ajs[i] = i
+	for i := 0; i <= koo; i++ {
+		cjs[i] = i - 1
 	}
-	ajs = append([]int{0}, ajs...)
-	tmp.ajs = ajs
+
+	cjs = append(cjs, tmp.length, 0)
+	tmp.cjs = cjs
 
 	return tmp
 }
 
-func (p *permutation) Visit() {
-	n := p.length + 1
-	p.visit(p.ajs[1:n])
-	p.visitFlag = false
+func (c *combination) Visit() {
+	n := c.k + 1
+	c.visit(c.cjs[1:n])
+	c.visitFlag = false
 }
 
 // Essentially a translation of implemention found in
 // https://github.com/jjhoo/sudoku-newlisp/blob/master/sudoku.lsp
-func (p *permutation) Next() bool {
-	if p.visitFlag {
+func (c *combination) Next() bool {
+	if c.visitFlag {
 		return true
 	}
 
-	// L2
-	j := p.length - 1
+	if c.j > 0 {
+		//  T6
+		x := c.j
+		c.cjs[c.j] = x
+		c.j--
+
+		c.visitFlag = true
+		return true
+	}
+
+	// T3
+	if (c.cjs[1] + 1) < c.cjs[2] {
+		c.cjs[1]++
+		return true
+	}
+
+	// T4
+	c.j = 2
 	cont := true
+	x := -1
 
 	for cont {
-		if p.ajs[j] >= p.ajs[j+1] {
-			j--
-		} else if p.ajs[j] < p.ajs[j+1] {
-			cont = false
-		} else if j == 0 {
+		c.cjs[c.j-1] = c.j - 2
+		x = c.cjs[c.j] + 1
+
+		if x == c.cjs[c.j+1] {
+			c.j++
+		} else {
 			cont = false
 		}
 	}
 
-	if j == 0 {
+	// T5
+	if c.j > c.k {
 		return false
 	}
 
-	// L3
-	l := p.length
-	if p.ajs[j] >= p.ajs[l] {
-		cont = true
-		for cont {
-			l--
-			if p.ajs[j] < p.ajs[l] {
-				cont = false
-			}
-		}
-	}
-	p.ajs[j], p.ajs[l] = p.ajs[l], p.ajs[j]
+	// T6
+	c.cjs[c.j] = x
+	c.j--
 
-	// L4
-	k := j + 1
-	l = p.length
-
-	for k < l {
-		p.ajs[k], p.ajs[l] = p.ajs[l], p.ajs[k]
-		k++
-		l--
-	}
+	c.visitFlag = true
 	return true
 }
