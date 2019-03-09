@@ -23,22 +23,26 @@ type Cell struct {
 	Value  int8
 }
 
-func initGrid(grids string) ([]Cell, error) {
-	if len(grids) != 81 {
-		return nil, fmt.Errorf("Grid '%s' has invalid size", grids)
-	}
+type Sudoku struct {
+	Solved     []Cell
+	Candidates []Cell
+}
 
-	var grid []Cell
+func (s *Sudoku) initGrid(grids string) error {
+	if len(grids) != 81 {
+		return fmt.Errorf("Grid '%s' has invalid size", grids)
+	}
 
 	var row int8 = 1
 	var column int8 = 1
 
 	zero := int8('0')
+	s.Solved = []Cell{}
 
 	for i, c := range grids {
 		ascii := int8(c) - zero
 
-		grid = append(grid, Cell{Row: row, Column: column, Value: ascii})
+		s.Solved = append(s.Solved, Cell{Row: row, Column: column, Value: ascii})
 
 		if (i+1)%9 == 0 {
 			row += 1
@@ -48,7 +52,11 @@ func initGrid(grids string) ([]Cell, error) {
 		}
 	}
 
-	return grid, nil
+	return nil
+}
+
+func (s Sudoku) printGrid() {
+	fmt.Println(s.Solved)
 }
 
 func printGrid(grid string) error {
@@ -76,8 +84,10 @@ func main() {
 		fmt.Printf("%s\n", err)
 	}
 
-	grid, err := initGrid(grid1)
+	var s Sudoku
+
+	err = s.initGrid(grid1)
 	if err == nil {
-		fmt.Println(grid)
+		s.printGrid()
 	}
 }
