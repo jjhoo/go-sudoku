@@ -301,6 +301,14 @@ func (s *Sudoku) updateSolved(solved []Cell) {
 	By(pos).Sort(s.Solved)
 }
 
+func (s *Sudoku) updateCandidates(solved []Cell) {
+	for _, sol := range solved {
+		s.Candidates = remove(s.Candidates, func(c Cell) bool {
+			return sol.Pos == c.Pos || (sol.Pos.sees(c.Pos) && sol.eqValue(c))
+		})
+	}
+}
+
 // Simple case where there is only one candidate left for a cell
 func (s *Sudoku) findSinglesSimple() ([]Cell, []Cell) {
 	poss := s.ucpos()
@@ -356,12 +364,10 @@ func main() {
 
 	s.initCandidates()
 
-	s.printGrid()
 	found, _ := s.findSinglesSimple()
 	if len(found) > 0 {
 		s.updateSolved(found)
-		// s.updateCandidates(found)
+		s.updateCandidates(found)
 	}
 	fmt.Println("Found", found)
-	s.printGrid()
 }
