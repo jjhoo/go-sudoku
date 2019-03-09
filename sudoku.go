@@ -17,6 +17,40 @@ package main
 
 import "fmt"
 
+type Cell struct {
+	Row    int8
+	Column int8
+	Value  int8
+}
+
+func initGrid(grids string) ([]Cell, error) {
+	if len(grids) != 81 {
+		return nil, fmt.Errorf("Grid '%s' has invalid size", grids)
+	}
+
+	var grid []Cell
+
+	var row int8 = 1
+	var column int8 = 1
+
+	zero := int8('0')
+
+	for i, c := range grids {
+		ascii := int8(c) - zero
+
+		grid = append(grid, Cell{Row: row, Column: column, Value: ascii})
+
+		if (i+1)%9 == 0 {
+			row += 1
+			column = 1
+		} else {
+			column += 1
+		}
+	}
+
+	return grid, nil
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -40,5 +74,10 @@ func main() {
 	err := printGrid(grid1)
 	if err != nil {
 		fmt.Printf("%s\n", err)
+	}
+
+	grid, err := initGrid(grid1)
+	if err == nil {
+		fmt.Println(grid)
 	}
 }
