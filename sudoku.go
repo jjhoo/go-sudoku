@@ -389,6 +389,18 @@ func mapCellInt8(cells []Cell, fn func(Cell) int8) []int8 {
 	return res
 }
 
+func cellPositions(cells []Cell) []Pos {
+	n := len(cells)
+
+	res := make([]Pos, n)
+
+	for i := 0; i < n; i++ {
+		res[i] = cells[i].Pos
+	}
+
+	return res
+}
+
 func dedupeInt8(ns []int8) []int8 {
 	if len(ns) <= 1 {
 		return ns
@@ -529,6 +541,31 @@ PROGRESS:
 	}
 }
 
+func dedupePos(poss []Pos) []Pos {
+	if len(poss) <= 1 {
+		return poss
+	}
+
+	prev := poss[0]
+	res := []Pos{prev}
+
+	for _, pos := range poss[1:] {
+		if pos != prev {
+			res = append(res, pos)
+			prev = pos
+		}
+	}
+
+	return res
+}
+
+func ucpos(cells []Cell) []Pos {
+	poss := cellPositions(cells)
+	poss = dedupePos(poss)
+
+	return poss
+}
+
 func main() {
 	grid1 := "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
 
@@ -570,5 +607,22 @@ func main() {
 			s.updateCandidates(fresult.Solved)
 		}
 		fmt.Println("Found", fresult.Solved)
+	}
+
+	test := s.getCandidateRow(1)
+	// poss := ucpos(test)
+	nums := uniqueNumbers(test)
+	foo := NewPermutation(nums, func(idxs []int) {
+		out := make([]int8, len(idxs))
+
+		for i, n := range idxs {
+			out[i] = nums[n]
+		}
+		fmt.Println("visit", out)
+	})
+	fmt.Println("permutation test", nums, foo)
+
+	for foo.Next() {
+		foo.Visit()
 	}
 }
