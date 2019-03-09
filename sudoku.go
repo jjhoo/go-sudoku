@@ -162,6 +162,10 @@ func (p Pos) sees(other Pos) bool {
 	return p.eqRow(other) || p.eqColumn(other) || p.eqBox(other)
 }
 
+func (c Cell) eqPos(other Cell) bool {
+	return c.Pos == other.Pos
+}
+
 func (c Cell) eqValue(other Cell) bool {
 	return c.Value == other.Value
 }
@@ -218,6 +222,43 @@ func (s Sudoku) printGrid() {
 	fmt.Println(s.Solved)
 }
 
+func (s Sudoku) ucpos() []Pos {
+	res := []Pos{}
+
+	if len(s.Candidates) == 0 {
+		return res
+	}
+
+	prev := s.Candidates[0].Pos
+	res = append(res, prev)
+
+	for _, cell := range s.Candidates[1:] {
+		if prev != cell.Pos {
+			res = append(res, cell.Pos)
+			prev = cell.Pos
+		}
+	}
+
+	return res
+}
+
+// Simple case where there is only one candidate left for a cell
+func (s *Sudoku) findSinglesSimple() ([]Cell, []Cell) {
+	poss := s.ucpos()
+	found := []Cell{}
+
+	for _, pos := range poss {
+		cands := filter(s.Candidates, func(c Cell) bool {
+			return pos == c.Pos
+		})
+
+		if len(cands) == 1 {
+			found = append(found, cands[0])
+		}
+	}
+	return found, nil
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -255,4 +296,7 @@ func main() {
 	fmt.Println(s.getBox(1))
 
 	s.initCandidates()
+
+	found, _ := s.findSinglesSimple()
+	fmt.Println("Found", found)
 }
