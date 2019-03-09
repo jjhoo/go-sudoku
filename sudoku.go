@@ -22,9 +22,9 @@ func printGrid(grid string) error {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
 	}
 
-	for i, c := range(grid) {
+	for i, c := range grid {
 		fmt.Printf("%c", c)
-		if (i + 1) % 9 == 0 {
+		if (i+1)%9 == 0 {
 			fmt.Print("\n")
 		} else {
 			fmt.Print(" ")
