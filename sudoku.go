@@ -17,6 +17,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 )
 
 type Box struct {
@@ -41,6 +42,30 @@ type Sudoku struct {
 }
 
 type cell_predicate func(Cell) bool
+
+type By func(p1 *Cell, p2 *Cell) bool
+
+func (by By) Sort(cells []Cell) {
+	xs := &cellSorter{cells: cells, by: by}
+	sort.Sort(xs)
+}
+
+type cellSorter struct {
+	cells []Cell
+	by    func(c1, c2 *Cell) bool
+}
+
+func (s *cellSorter) Len() int {
+	return len(s.cells)
+}
+
+func (s *cellSorter) Less(i, j int) bool {
+	return s.by(&s.cells[i], &s.cells[j])
+}
+
+func (s *cellSorter) Swap(i, j int) {
+	s.cells[i], s.cells[j] = s.cells[j], s.cells[i]
+}
 
 func numToBoxNumber(n int8) int8 {
 	var nn int8
@@ -242,6 +267,40 @@ func (s Sudoku) ucpos() []Pos {
 	return res
 }
 
+func (p Pos) less(other *Pos) bool {
+	if p.Row < other.Row {
+		return true
+	}
+
+	if p.Row == other.Row {
+		return p.Column < other.Column
+	}
+
+	return false
+}
+
+func (c Cell) less(other *Cell) bool {
+	if c.Pos.less(&other.Pos) {
+		return true
+	}
+
+	if c.Pos == other.Pos {
+		return c.Value < other.Value
+	}
+
+	return false
+}
+
+func (s *Sudoku) updateSolved(solved []Cell) {
+	s.Solved = append(s.Solved, solved...)
+
+	pos := func(c1 *Cell, c2 *Cell) bool {
+		return c1.less(c2)
+	}
+
+	By(pos).Sort(s.Solved)
+}
+
 // Simple case where there is only one candidate left for a cell
 func (s *Sudoku) findSinglesSimple() ([]Cell, []Cell) {
 	poss := s.ucpos()
@@ -297,6 +356,12 @@ func main() {
 
 	s.initCandidates()
 
+	s.printGrid()
 	found, _ := s.findSinglesSimple()
+	if len(found) > 0 {
+		s.updateSolved(found)
+		// s.updateCandidates(found)
+	}
 	fmt.Println("Found", found)
+	s.printGrid()
 }
