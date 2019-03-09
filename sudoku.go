@@ -46,9 +46,9 @@ type finderResult struct {
 	Eliminated []Cell
 }
 
-type cell_getter func(x int8) []Cell
-type cell_finder func(cells []Cell) finderResult
-type cell_predicate func(Cell) bool
+type cellGetter func(x int8) []Cell
+type cellFinder func(cells []Cell) finderResult
+type cellPredicate func(Cell) bool
 
 func numToBoxNumber(n int8) int8 {
 	var nn int8
@@ -89,7 +89,7 @@ func numToBox(n int8) Box {
 	return box
 }
 
-func filter(cells []Cell, pred cell_predicate) []Cell {
+func filter(cells []Cell, pred cellPredicate) []Cell {
 	res := []Cell{}
 
 	for _, cell := range cells {
@@ -101,7 +101,7 @@ func filter(cells []Cell, pred cell_predicate) []Cell {
 	return res
 }
 
-func remove(cells []Cell, pred cell_predicate) []Cell {
+func remove(cells []Cell, pred cellPredicate) []Cell {
 	res := []Cell{}
 
 	for _, cell := range cells {
@@ -226,10 +226,10 @@ func (s *Sudoku) initGrid(grids string) error {
 		s.Solved[idx] = Cell{}.init(row, column, ascii)
 
 		if (i+1)%9 == 0 {
-			row += 1
+			row++
 			column = 1
 		} else {
-			column += 1
+			column++
 		}
 	}
 
@@ -345,8 +345,8 @@ func (s *Sudoku) findSinglesSimple() finderResult {
 	return finderResult{Solved: found, Eliminated: nil}
 }
 
-func (s *Sudoku) finder(cf cell_finder) finderResult {
-	funs := []cell_getter{s.getCandidateRow, s.getCandidateColumn, s.getCandidateBox}
+func (s *Sudoku) finder(cf cellFinder) finderResult {
+	funs := []cellGetter{s.getCandidateRow, s.getCandidateColumn, s.getCandidateBox}
 
 	found := []Cell{}
 	eliminated := []Cell{}
@@ -530,7 +530,7 @@ PROGRESS:
 }
 
 func main() {
-	var grid1 string = "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
+	grid1 := "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
 
 	err := printGrid(grid1)
 	if err != nil {
