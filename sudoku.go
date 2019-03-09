@@ -19,10 +19,20 @@ import (
 	"fmt"
 )
 
-type Cell struct {
+type Box struct {
 	Row    int8
 	Column int8
-	Value  int8
+}
+
+type Pos struct {
+	Row    int8
+	Column int8
+	Box    Box
+}
+
+type Cell struct {
+	Value int8
+	Pos   Pos
 }
 
 type Sudoku struct {
@@ -31,6 +41,45 @@ type Sudoku struct {
 }
 
 type cell_predicate func(Cell) bool
+
+func numToBoxNumber(n int8) int8 {
+	var nn int8
+
+	switch n {
+	case 1, 2, 3:
+		nn = 1
+	case 4, 5, 6:
+		nn = 2
+	case 7, 8, 9:
+		nn = 3
+	}
+	return nn
+}
+
+func numToBox(n int8) Box {
+	var box = Box{}
+	switch n {
+	case 1:
+		box = Box{Row: 1, Column: 1}
+	case 2:
+		box = Box{Row: 1, Column: 2}
+	case 3:
+		box = Box{Row: 1, Column: 3}
+	case 4:
+		box = Box{Row: 2, Column: 1}
+	case 5:
+		box = Box{Row: 2, Column: 2}
+	case 6:
+		box = Box{Row: 2, Column: 3}
+	case 7:
+		box = Box{Row: 3, Column: 1}
+	case 8:
+		box = Box{Row: 3, Column: 2}
+	case 9:
+		box = Box{Row: 3, Column: 3}
+	}
+	return box
+}
 
 func filter(cells []Cell, pred cell_predicate) []Cell {
 	res := []Cell{}
@@ -46,14 +95,43 @@ func filter(cells []Cell, pred cell_predicate) []Cell {
 
 func (s Sudoku) getRow(row int8) []Cell {
 	return filter(s.Solved, func(c Cell) bool {
-		return c.Row == row
+		return c.Pos.Row == row
 	})
 }
 
 func (s Sudoku) getColumn(col int8) []Cell {
 	return filter(s.Solved, func(c Cell) bool {
-		return c.Column == col
+		return c.Pos.Column == col
 	})
+}
+
+func (s Sudoku) getBox(box int8) []Cell {
+	b := numToBox(box)
+	return filter(s.Solved, func(c Cell) bool {
+		return c.Pos.Box == b
+	})
+}
+
+func (b Box) init(row int8, col int8) Box {
+	b.Row = numToBoxNumber(row)
+	b.Column = numToBoxNumber(col)
+
+	return b
+}
+
+func (p Pos) init(row int8, col int8) Pos {
+	p.Row = row
+	p.Column = col
+	p.Box = Box{}.init(row, col)
+
+	return p
+}
+
+func (c Cell) init(row int8, col int8, value int8) Cell {
+	c.Pos = Pos{}.init(row, col)
+	c.Value = value
+
+	return c
 }
 
 func (s *Sudoku) initGrid(grids string) error {
@@ -70,7 +148,9 @@ func (s *Sudoku) initGrid(grids string) error {
 	for i, c := range grids {
 		ascii := int8(c) - zero
 
-		s.Solved = append(s.Solved, Cell{Row: row, Column: column, Value: ascii})
+		if ascii > 0 {
+			s.Solved = append(s.Solved, Cell{}.init(row, column, ascii))
+		}
 
 		if (i+1)%9 == 0 {
 			row += 1
@@ -86,11 +166,11 @@ func (s *Sudoku) initGrid(grids string) error {
 func (s *Sudoku) initCandidates() {
 	s.Candidates = []Cell{}
 
-	for _, cell := range s.Solved {
-		if cell.Value == 0 {
-			for i := 1; i < 10; i++ {
-				s.Candidates = append(s.Candidates,
-					Cell{Row: cell.Row, Column: cell.Column, Value: int8(i)})
+	for i := 1; i < 10; i++ {
+		for j := 1; j < 10; j++ {
+			for n := 1; n < 10; n++ {
+				s.Candidates = append(
+					s.Candidates, Cell{}.init(int8(i), int8(j), int8(n)))
 			}
 		}
 	}
@@ -142,4 +222,5 @@ func main() {
 	// s.initCandidates()
 	fmt.Println(s.getRow(1))
 	fmt.Println(s.getColumn(1))
+	fmt.Println(s.getBox(1))
 }
