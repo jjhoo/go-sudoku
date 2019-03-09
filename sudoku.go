@@ -41,7 +41,13 @@ type Sudoku struct {
 	Candidates []Cell
 }
 
+type finderResult struct {
+	Solved     []Cell
+	Eliminated []Cell
+}
+
 type cell_getter func(x int8) []Cell
+type cell_finder func(cells []Cell) finderResult
 type cell_predicate func(Cell) bool
 
 func numToBoxNumber(n int8) int8 {
@@ -107,21 +113,51 @@ func remove(cells []Cell, pred cell_predicate) []Cell {
 	return res
 }
 
+func (s Sudoku) getCell(row, col int8) Cell {
+	idx := (row-1)*9 + (col - 1)
+	return s.Solved[idx]
+}
+
 func (s Sudoku) getRow(row int8) []Cell {
 	return filter(s.Solved, func(c Cell) bool {
-		return c.Pos.Row == row
+		return c.Value != 0 && c.Pos.Row == row
 	})
 }
 
 func (s Sudoku) getColumn(col int8) []Cell {
 	return filter(s.Solved, func(c Cell) bool {
-		return c.Pos.Column == col
+		return c.Value != 0 && c.Pos.Column == col
 	})
 }
 
 func (s Sudoku) getBox(box int8) []Cell {
 	b := numToBox(box)
 	return filter(s.Solved, func(c Cell) bool {
+		return c.Value != 0 && c.Pos.Box == b
+	})
+}
+
+func (s Sudoku) getCandidateCell(row, col int8) []Cell {
+	return filter(s.Candidates, func(c Cell) bool {
+		return c.Pos.Row == row && c.Pos.Column == col
+	})
+}
+
+func (s Sudoku) getCandidateRow(row int8) []Cell {
+	return filter(s.Candidates, func(c Cell) bool {
+		return c.Pos.Row == row
+	})
+}
+
+func (s Sudoku) getCandidateColumn(col int8) []Cell {
+	return filter(s.Candidates, func(c Cell) bool {
+		return c.Pos.Column == col
+	})
+}
+
+func (s Sudoku) getCandidateBox(box int8) []Cell {
+	b := numToBox(box)
+	return filter(s.Candidates, func(c Cell) bool {
 		return c.Pos.Box == b
 	})
 }
@@ -181,14 +217,13 @@ func (s *Sudoku) initGrid(grids string) error {
 	var column int8 = 1
 
 	zero := int8('0')
-	s.Solved = []Cell{}
+	s.Solved = make([]Cell, 81)
 
 	for i, c := range grids {
 		ascii := int8(c) - zero
 
-		if ascii > 0 {
-			s.Solved = append(s.Solved, Cell{}.init(row, column, ascii))
-		}
+		idx := (row-1)*9 + (column - 1)
+		s.Solved[idx] = Cell{}.init(row, column, ascii)
 
 		if (i+1)%9 == 0 {
 			row += 1
@@ -214,6 +249,10 @@ func (s *Sudoku) initCandidates() {
 	}
 
 	for _, solved := range s.Solved {
+		if solved.Value == 0 {
+			continue
+		}
+
 		s.Candidates = remove(s.Candidates, func(c Cell) bool {
 			return solved.Pos == c.Pos || (solved.Pos.sees(c.Pos) && solved.eqValue(c))
 		})
@@ -221,7 +260,7 @@ func (s *Sudoku) initCandidates() {
 }
 
 func (s Sudoku) printGrid() {
-	fmt.Println(s.Solved)
+	fmt.Println(filter(s.Solved, func(c Cell) bool { return c.Value != 0 }))
 }
 
 func (s Sudoku) ucpos() []Pos {
@@ -269,23 +308,26 @@ func (c Cell) less(other *Cell) bool {
 }
 
 func (s *Sudoku) updateSolved(solved []Cell) {
-	s.Solved = append(s.Solved, solved...)
-
-	sort.Slice(s.Solved, func(i, j int) bool {
-		return s.Solved[i].less(&s.Solved[j])
-	})
-}
-
-func (s *Sudoku) updateCandidates(solved []Cell) {
 	for _, sol := range solved {
+		idx := (sol.Pos.Row-1)*9 + (sol.Pos.Column - 1)
+		s.Solved[idx].Value = sol.Value
+
 		s.Candidates = remove(s.Candidates, func(c Cell) bool {
 			return sol.Pos == c.Pos || (sol.Pos.sees(c.Pos) && sol.eqValue(c))
 		})
 	}
 }
 
+func (s *Sudoku) updateCandidates(eliminated []Cell) {
+	for _, cell := range eliminated {
+		s.Candidates = remove(s.Candidates, func(c Cell) bool {
+			return cell.Pos == c.Pos
+		})
+	}
+}
+
 // Simple case where there is only one candidate left for a cell
-func (s *Sudoku) findSinglesSimple() ([]Cell, []Cell) {
+func (s *Sudoku) findSinglesSimple() finderResult {
 	poss := s.ucpos()
 	found := []Cell{}
 
@@ -298,30 +340,142 @@ func (s *Sudoku) findSinglesSimple() ([]Cell, []Cell) {
 			found = append(found, cands[0])
 		}
 	}
-	return found, nil
+
+	found = uniqueCells(found)
+	return finderResult{Solved: found, Eliminated: nil}
 }
 
-func (s *Sudoku) finder(p cell_predicate) []Cell {
-	funs := []cell_getter{s.getRow, s.getColumn, s.getBox}
+func (s *Sudoku) finder(cf cell_finder) finderResult {
+	funs := []cell_getter{s.getCandidateRow, s.getCandidateColumn, s.getCandidateBox}
+
+	found := []Cell{}
+	eliminated := []Cell{}
 
 	for _, fun := range funs {
 		for i := 1; i < 10; i++ {
 			cells := fun(int8(i))
+
+			if len(cells) == 0 {
+				continue
+			}
+
+			fresult := cf(cells)
+
+			if len(fresult.Solved) > 0 {
+				found = append(found, fresult.Solved...)
+			}
+
+			if len(fresult.Eliminated) > 0 {
+				eliminated = append(eliminated, fresult.Eliminated...)
+			}
 		}
 	}
 
-	return nil
+	found = uniqueCells(found)
+	eliminated = uniqueCells(eliminated)
+
+	return finderResult{Solved: found, Eliminated: eliminated}
+}
+
+func mapCellInt8(cells []Cell, fn func(Cell) int8) []int8 {
+	n := len(cells)
+
+	res := make([]int8, n)
+
+	for i := 0; i < n; i++ {
+		res[i] = fn(cells[i])
+	}
+
+	return res
+}
+
+func dedupeInt8(ns []int8) []int8 {
+	if len(ns) <= 1 {
+		return ns
+	}
+
+	prev := ns[0]
+	res := []int8{prev}
+
+	for _, n := range ns[1:] {
+		if n != prev {
+			res = append(res, n)
+			prev = n
+		}
+	}
+
+	return res
+}
+
+func sortInt8(array []int8) {
+	sort.Slice(array, func(i, j int) bool {
+		return array[i] < array[j]
+	})
+}
+
+func dedupeCells(cells []Cell) []Cell {
+	if len(cells) <= 1 {
+		return cells
+	}
+
+	prev := cells[0]
+	res := []Cell{prev}
+
+	for _, cell := range cells[1:] {
+		if cell != prev {
+			res = append(res, cell)
+			prev = cell
+		}
+	}
+
+	return res
+}
+
+func sortCells(array []Cell) {
+	sort.Slice(array, func(i, j int) bool {
+		return array[i].less(&array[j])
+	})
+}
+
+func uniqueNumbers(cells []Cell) []int8 {
+	res := mapCellInt8(cells, func(cell Cell) int8 {
+		return cell.Value
+	})
+
+	sortInt8(res)
+	res = dedupeInt8(res)
+
+	return res
+}
+
+func uniqueCells(cells []Cell) []Cell {
+	sortCells(cells)
+	res := dedupeCells(cells)
+
+	return res
 }
 
 // Only one candidate left for a number in row / column / box
-func (s *Sudoku) findSingles() ([]Cell, []Cell) {
-	s.finder(func (c Cell) bool {
-		return false
+func (s *Sudoku) findSingles() finderResult {
+	return s.finder(func(cells []Cell) finderResult {
+		nums := uniqueNumbers(cells)
+		// fmt.Println(nums)
+
+		found := []Cell{}
+
+		for _, n := range nums {
+			ncells := filter(cells, func(cell Cell) bool {
+				return cell.Value == n
+			})
+
+			if len(ncells) == 1 {
+				found = append(found, ncells[0])
+			}
+		}
+
+		found = uniqueCells(found)
+		return finderResult{Solved: found, Eliminated: nil}
 	})
-
-	found := []Cell{}
-
-	return found, nil
 }
 
 func printGrid(grid string) error {
@@ -339,6 +493,40 @@ func printGrid(grid string) error {
 	}
 
 	return nil
+}
+
+func (s *Sudoku) solve() {
+	finders := []func() finderResult{
+		s.findSinglesSimple,
+		s.findSingles}
+
+	fmt.Println("begin", len(s.Candidates))
+	finderCount := len(finders)
+	finderIdx := 0
+
+PROGRESS:
+	for finderIdx < finderCount {
+		// fmt.Println("Finder", finderIdx)
+
+		res := finders[finderIdx]()
+
+		if len(res.Solved) > 0 {
+			fmt.Println("Found", res.Solved)
+			s.updateSolved(res.Solved)
+		}
+
+		if len(res.Eliminated) > 0 {
+			fmt.Println("Eliminated", res.Eliminated)
+			s.updateCandidates(res.Eliminated)
+		}
+
+		if len(res.Solved) != 0 || len(res.Eliminated) != 0 {
+			fmt.Println("progress", len(s.Candidates))
+			finderIdx = 0
+			continue PROGRESS
+		}
+		finderIdx++
+	}
 }
 
 func main() {
@@ -362,17 +550,25 @@ func main() {
 
 	s.initCandidates()
 
-	found, _ := s.findSinglesSimple()
-	if len(found) > 0 {
-		s.updateSolved(found)
-		s.updateCandidates(found)
-	}
-	fmt.Println("Found", found)
+	s.printGrid()
+	// fmt.Println(s.Candidates)
+	s.solve()
+	s.printGrid()
 
-	found, _ = s.findSingles()
-	if len(found) > 0 {
-		s.updateSolved(found)
-		s.updateCandidates(found)
+	if false {
+		fresult := s.findSinglesSimple()
+		if len(fresult.Solved) > 0 {
+			s.updateSolved(fresult.Solved)
+			s.updateCandidates(fresult.Solved)
+		}
+		fmt.Println("Found", fresult.Solved)
+		// fmt.Println(s.Candidates)
+
+		fresult = s.findSingles()
+		if len(fresult.Solved) > 0 {
+			s.updateSolved(fresult.Solved)
+			s.updateCandidates(fresult.Solved)
+		}
+		fmt.Println("Found", fresult.Solved)
 	}
-	fmt.Println("Found", found)
 }
