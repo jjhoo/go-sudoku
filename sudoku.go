@@ -93,6 +93,18 @@ func filter(cells []Cell, pred cell_predicate) []Cell {
 	return res
 }
 
+func remove(cells []Cell, pred cell_predicate) []Cell {
+	res := []Cell{}
+
+	for _, cell := range cells {
+		if !pred(cell) {
+			res = append(res, cell)
+		}
+	}
+
+	return res
+}
+
 func (s Sudoku) getRow(row int8) []Cell {
 	return filter(s.Solved, func(c Cell) bool {
 		return c.Pos.Row == row
@@ -132,6 +144,26 @@ func (c Cell) init(row int8, col int8, value int8) Cell {
 	c.Value = value
 
 	return c
+}
+
+func (p Pos) eqRow(other Pos) bool {
+	return p.Row == other.Row
+}
+
+func (p Pos) eqColumn(other Pos) bool {
+	return p.Column == other.Column
+}
+
+func (p Pos) eqBox(other Pos) bool {
+	return p.Box == other.Box
+}
+
+func (p Pos) sees(other Pos) bool {
+	return p.eqRow(other) || p.eqColumn(other) || p.eqBox(other)
+}
+
+func (c Cell) eqValue(other Cell) bool {
+	return c.Value == other.Value
 }
 
 func (s *Sudoku) initGrid(grids string) error {
@@ -175,12 +207,11 @@ func (s *Sudoku) initCandidates() {
 		}
 	}
 
-	for _, cell := range s.Solved {
-		if cell.Value != 0 {
-
-		}
+	for _, solved := range s.Solved {
+		s.Candidates = remove(s.Candidates, func(c Cell) bool {
+			return solved.Pos == c.Pos || (solved.Pos.sees(c.Pos) && solved.eqValue(c))
+		})
 	}
-	fmt.Println(s.Candidates)
 }
 
 func (s Sudoku) printGrid() {
@@ -219,8 +250,9 @@ func main() {
 		s.printGrid()
 	}
 
-	// s.initCandidates()
 	fmt.Println(s.getRow(1))
 	fmt.Println(s.getColumn(1))
 	fmt.Println(s.getBox(1))
+
+	s.initCandidates()
 }
