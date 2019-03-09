@@ -41,31 +41,8 @@ type Sudoku struct {
 	Candidates []Cell
 }
 
+type cell_getter func(x int8) []Cell
 type cell_predicate func(Cell) bool
-
-type By func(p1 *Cell, p2 *Cell) bool
-
-func (by By) Sort(cells []Cell) {
-	xs := &cellSorter{cells: cells, by: by}
-	sort.Sort(xs)
-}
-
-type cellSorter struct {
-	cells []Cell
-	by    func(c1, c2 *Cell) bool
-}
-
-func (s *cellSorter) Len() int {
-	return len(s.cells)
-}
-
-func (s *cellSorter) Less(i, j int) bool {
-	return s.by(&s.cells[i], &s.cells[j])
-}
-
-func (s *cellSorter) Swap(i, j int) {
-	s.cells[i], s.cells[j] = s.cells[j], s.cells[i]
-}
 
 func numToBoxNumber(n int8) int8 {
 	var nn int8
@@ -294,11 +271,9 @@ func (c Cell) less(other *Cell) bool {
 func (s *Sudoku) updateSolved(solved []Cell) {
 	s.Solved = append(s.Solved, solved...)
 
-	pos := func(c1 *Cell, c2 *Cell) bool {
-		return c1.less(c2)
-	}
-
-	By(pos).Sort(s.Solved)
+	sort.Slice(s.Solved, func(i, j int) bool {
+		return s.Solved[i].less(&s.Solved[j])
+	})
 }
 
 func (s *Sudoku) updateCandidates(solved []Cell) {
@@ -323,6 +298,29 @@ func (s *Sudoku) findSinglesSimple() ([]Cell, []Cell) {
 			found = append(found, cands[0])
 		}
 	}
+	return found, nil
+}
+
+func (s *Sudoku) finder(p cell_predicate) []Cell {
+	funs := []cell_getter{s.getRow, s.getColumn, s.getBox}
+
+	for _, fun := range funs {
+		for i := 1; i < 10; i++ {
+			cells := fun(int8(i))
+		}
+	}
+
+	return nil
+}
+
+// Only one candidate left for a number in row / column / box
+func (s *Sudoku) findSingles() ([]Cell, []Cell) {
+	s.finder(func (c Cell) bool {
+		return false
+	})
+
+	found := []Cell{}
+
 	return found, nil
 }
 
@@ -365,6 +363,13 @@ func main() {
 	s.initCandidates()
 
 	found, _ := s.findSinglesSimple()
+	if len(found) > 0 {
+		s.updateSolved(found)
+		s.updateCandidates(found)
+	}
+	fmt.Println("Found", found)
+
+	found, _ = s.findSingles()
 	if len(found) > 0 {
 		s.updateSolved(found)
 		s.updateCandidates(found)
