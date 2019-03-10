@@ -637,6 +637,7 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 			// fmt.Println("cnums", cnums)
 
 			if len(cnums.Numbers) > limit {
+				others = append(others, cnums.Pos)
 				continue OUTER
 			}
 
@@ -651,7 +652,7 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 		}
 
 		if len(matches) == limit && len(others) > 0 {
-			fmt.Println("matches", matches, ", others", others)
+			// fmt.Println("matches", matches, ", others", others)
 
 			nfound := filter(cands, func(c Cell) bool {
 				for _, other := range others {
@@ -659,8 +660,11 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 						continue
 					}
 
+					// fmt.Println("check", c.Pos)
+
 					for _, n := range comb {
 						if n == c.Value {
+							// fmt.Println("found", c.Pos, n)
 							return true
 						}
 					}
