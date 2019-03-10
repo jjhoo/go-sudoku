@@ -17,6 +17,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/adam-hanna/arrayOperations"
 	"sort"
 )
 
@@ -34,6 +35,11 @@ type Pos struct {
 type Cell struct {
 	Value int8
 	Pos   Pos
+}
+
+type CellNumbers struct {
+	Pos     Pos
+	Numbers []int8
 }
 
 type Sudoku struct {
@@ -160,6 +166,24 @@ func (s Sudoku) getCandidateBox(box int8) []Cell {
 	return filter(s.Candidates, func(c Cell) bool {
 		return c.Pos.Box == b
 	})
+}
+
+func getCellNumbers(pos Pos, cands []Cell) CellNumbers {
+	cells := filter(cands, func(c Cell) bool {
+		return c.Pos == pos
+	})
+
+	nums := []int8{}
+
+	for _, c := range cells {
+		nums = append(nums, c.Value)
+	}
+
+	return CellNumbers{Pos: pos, Numbers: nums}
+}
+
+func (s Sudoku) getCellNumbers(pos Pos) CellNumbers {
+	return getCellNumbers(pos, s.Candidates)
 }
 
 func (b Box) init(row int8, col int8) Box {
@@ -449,6 +473,38 @@ func sortCells(array []Cell) {
 	})
 }
 
+func numbers(cells []Cell) []int8 {
+	res := mapCellInt8(cells, func(cell Cell) int8 {
+		return cell.Value
+	})
+
+	sortInt8(res)
+	return res
+}
+
+type numCount struct {
+	num   int8
+	count int8
+}
+
+func numberCounts(nums []int8) []numCount {
+	nnums := dedupeInt8(nums)
+
+	counts := []numCount{}
+
+	for _, n := range nnums {
+		var count int8 = 0
+		for _, nn := range nums {
+			if n == nn {
+				count++
+			}
+		}
+		counts = append(counts, numCount{num: n, count: count})
+	}
+
+	return counts
+}
+
 func uniqueNumbers(cells []Cell) []int8 {
 	res := mapCellInt8(cells, func(cell Cell) int8 {
 		return cell.Value
@@ -490,6 +546,114 @@ func (s *Sudoku) findSingles() finderResult {
 	})
 }
 
+func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
+	poss := ucpos(cands)
+
+	if len(poss) < (limit + 1) {
+		return finderResult{Solved: nil, Eliminated: nil}
+	}
+
+	nums := numbers(cands)
+	ncounts := numberCounts(nums)
+	unums := []int8{}
+
+	for _, nc := range ncounts {
+		unums = append(unums, nc.num)
+	}
+
+	// fmt.Println("counts", cands, ncounts, unums)
+	found := []Cell{}
+
+	combs := Combination(unums, limit)
+	for {
+		matches := []CellNumbers{}
+		others := []Pos{}
+
+		idxs := combs.Next()
+		if idxs == nil {
+			break
+		}
+
+		comb := make([]int8, len(idxs))
+
+		for i, n := range idxs {
+			comb[i] = unums[n]
+		}
+		// fmt.Println("visit comb", comb)
+
+	OUTER:
+		for _, pos := range ucpos(cands) {
+			cnums := getCellNumbers(pos, cands)
+			// fmt.Println("cnums", cnums)
+
+			if len(cnums.Numbers) > limit {
+				continue OUTER
+			}
+
+			diff, _ := arrayOperations.Difference(cnums.Numbers, comb)
+			slice, _ := diff.Interface().([]int8)
+			if len(slice) == 0 {
+				// fmt.Println("no difference", diff, cnums.Numbers, comb)
+				matches = append(matches, cnums)
+			} else {
+				others = append(others, cnums.Pos)
+			}
+		}
+
+		if len(matches) == limit && len(others) > 0 {
+			fmt.Println("matches", matches, ", others", others)
+
+			nfound := filter(cands, func(c Cell) bool {
+				for _, other := range others {
+					if c.Pos != other {
+						continue
+					}
+
+					for _, n := range comb {
+						if n == c.Value {
+							return true
+						}
+					}
+				}
+				return false
+			})
+			found = append(found, nfound...)
+		}
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
+func (s *Sudoku) findNakedGroups2() finderResult {
+	return s.finder(func(cells []Cell) finderResult {
+		found := findNakedGroupsInSet(2, cells)
+
+		found.Eliminated = uniqueCells(found.Eliminated)
+
+		return found
+	})
+}
+
+func (s *Sudoku) findNakedGroups3() finderResult {
+	return s.finder(func(cells []Cell) finderResult {
+		found := findNakedGroupsInSet(3, cells)
+
+		found.Eliminated = uniqueCells(found.Eliminated)
+
+		return found
+	})
+}
+
+func (s *Sudoku) findNakedGroups4() finderResult {
+	return s.finder(func(cells []Cell) finderResult {
+		found := findNakedGroupsInSet(4, cells)
+
+		found.Eliminated = uniqueCells(found.Eliminated)
+
+		return found
+	})
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -510,7 +674,10 @@ func printGrid(grid string) error {
 func (s *Sudoku) solve() {
 	finders := []func() finderResult{
 		s.findSinglesSimple,
-		s.findSingles}
+		s.findSingles,
+		s.findNakedGroups2,
+		s.findNakedGroups3,
+		s.findNakedGroups4}
 
 	fmt.Println("begin", len(s.Candidates))
 	finderCount := len(finders)
@@ -567,7 +734,8 @@ func ucpos(cells []Cell) []Pos {
 }
 
 func main() {
-	grid1 := "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
+	// grid1 := "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
+	grid1 := "014600300050000007090840100000400800600050009007009000008016030300000010009008570"
 
 	err := printGrid(grid1)
 	if err != nil {
