@@ -17,7 +17,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/adam-hanna/arrayOperations"
+	"github.com/deckarep/golang-set"
 	"sort"
 )
 
@@ -610,7 +610,7 @@ func (s *Sudoku) findSingles() finderResult {
 }
 
 func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
-	fmt.Println("naked set", limit)
+	// fmt.Println("naked set", limit)
 	poss := ucpos(cands)
 
 	if len(poss) < (limit + 1) {
@@ -655,12 +655,21 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 				continue OUTER
 			}
 
-			diff, _ := arrayOperations.Difference(cnums.Numbers, comb)
-			slice, _ := diff.Interface().([]int8)
-			if len(slice) == 0 {
-				// fmt.Println("no difference", diff, cnums.Numbers, comb)
+			set1 := mapset.NewSet()
+			for _, n := range comb {
+				set1.Add(n)
+			}
+
+			set2 := mapset.NewSet()
+			for _, n := range cnums.Numbers {
+				set2.Add(n)
+			}
+
+			if set2.IsSubset(set1) {
+				// fmt.Println("is subset", comb, cnums.Numbers)
 				matches = append(matches, cnums)
 			} else {
+				// fmt.Println("is not subset", comb, cnums.Numbers)
 				others = append(others, cnums.Pos)
 			}
 		}
