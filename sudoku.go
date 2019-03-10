@@ -395,7 +395,7 @@ func (s *Sudoku) updateSolved(solved []Cell) {
 func (s *Sudoku) updateCandidates(eliminated []Cell) {
 	for _, cell := range eliminated {
 		s.Candidates = remove(s.Candidates, func(c Cell) bool {
-			return cell.Pos == c.Pos
+			return cell.Pos == c.Pos && cell.Value == c.Value
 		})
 	}
 }
