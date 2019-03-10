@@ -322,7 +322,11 @@ func (s *Sudoku) initCandidates() {
 }
 
 func (s Sudoku) printGrid() {
+	fmt.Print("+-------------------+\n")
 	for i, cell := range s.Solved {
+		if (i+1)%9 == 1 {
+			fmt.Print("| ")
+		}
 		v := cell.Value
 		if v == '0' {
 			fmt.Printf(" ")
@@ -330,11 +334,20 @@ func (s Sudoku) printGrid() {
 			fmt.Printf("%d", v)
 		}
 		if (i+1)%9 == 0 {
-			fmt.Print("\n")
+			fmt.Print(" |\n")
 		} else {
 			fmt.Print(" ")
 		}
 	}
+	fmt.Print("+-------------------+\n")
+}
+
+func (s Sudoku) getGridString() string {
+	runes := []rune{}
+	for _, cell := range s.Solved {
+		runes = append(runes, rune('0') + int32(cell.Value))
+	}
+	return string(runes)
 }
 
 func (s Sudoku) ucpos() []Pos {
@@ -597,6 +610,7 @@ func (s *Sudoku) findSingles() finderResult {
 }
 
 func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
+	fmt.Println("naked set", limit)
 	poss := ucpos(cands)
 
 	if len(poss) < (limit + 1) {
@@ -814,6 +828,7 @@ func main() {
 	// fmt.Println(s.Candidates)
 	s.solve()
 	s.printGrid()
+	fmt.Println(s.getGridString())
 
 	if false {
 		fresult := s.findSinglesSimple()
