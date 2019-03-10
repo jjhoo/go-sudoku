@@ -402,6 +402,15 @@ func (c Cell) less(other *Cell) bool {
 	return false
 }
 
+func (c Cell) inBox(others []Cell) bool {
+	for _, other := range others {
+		if c.Pos.Box != other.Pos.Box {
+			return false
+		}
+	}
+	return true
+}
+
 func (c Cell) inColumn(others []Cell) bool {
 	for _, other := range others {
 		if c.Pos.Column != other.Pos.Column {
@@ -801,6 +810,63 @@ func (s *Sudoku) findPointingPairs() finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
+func (s *Sudoku) findBoxlineReduction() finderResult {
+	found := []Cell{}
+
+	type pair struct {
+		getCells   func(int8) []Cell
+		isSameLine func(Pos, Pos) bool
+	}
+
+	fpairs := []pair{
+		{s.getCandidateRow, Pos.eqRow},
+		{s.getCandidateColumn, Pos.eqColumn},
+	}
+
+	for _, fpair := range fpairs {
+		var n int8
+		for n = 1; n < 10; n++ {
+			cells := fpair.getCells(n)
+			if len(cells) < 2 {
+				// No panic, even though other finders should have
+				// eliminated this case
+				continue
+			}
+
+			nums := numbers(cells)
+			ncounts := numberCounts(nums)
+
+			for _, nc := range ncounts {
+				if !(nc.count == 2 || nc.count == 3) {
+					continue
+				}
+
+				// fmt.Println("boxline: good count")
+
+				ncells := filter(cells, func(c Cell) bool {
+					return nc.num == c.Value
+				})
+
+				if !(ncells[0].inBox(ncells[1:])) {
+					continue
+				}
+
+				// fmt.Println("boxline: in same box", ncells)
+
+				// Needs to be same value, same box, different row/col
+				nfound := filter(s.Candidates, func(c Cell) bool {
+					return ncells[0].Value == c.Value && ncells[0].Pos.Box == c.Pos.Box && !fpair.isSameLine(ncells[0].Pos, c.Pos)
+				})
+
+				// fmt.Println("boxline found", nfound)
+				found = append(found, nfound...)
+			}
+		}
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -825,7 +891,9 @@ func (s *Sudoku) solve() {
 		s.findNakedGroups2,
 		s.findNakedGroups3,
 		s.findNakedGroups4,
-		s.findPointingPairs}
+		s.findPointingPairs,
+		s.findBoxlineReduction,
+	}
 
 	fmt.Println("begin", len(s.Candidates))
 	finderCount := len(finders)
