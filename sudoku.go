@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/deckarep/golang-set"
 	"sort"
+	"unicode"
 )
 
 type Box struct {
@@ -278,11 +279,18 @@ func (s *Sudoku) initGrid(grids string) error {
 	var row int8 = 1
 	var column int8 = 1
 
-	zero := int8('0')
 	s.Solved = make([]Cell, 81)
 
-	for i, c := range grids {
-		ascii := int8(c) - zero
+	var i int
+	var c rune
+	zero := rune('0')
+
+	for i, c = range grids {
+		if !unicode.IsDigit(c) {
+			return fmt.Errorf("Invalid rune '%c' in grid", c)
+		}
+
+		ascii := int8(c - zero)
 
 		idx := (row-1)*9 + (column - 1)
 		s.Solved[idx] = Cell{}.init(row, column, ascii)
@@ -888,6 +896,9 @@ func main() {
 	err = s.initGrid(grid1)
 	if err == nil {
 		s.printGrid()
+	} else {
+		fmt.Println(err)
+		panic(err)
 	}
 
 	fmt.Println(s.getRow(1))
