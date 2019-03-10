@@ -209,16 +209,31 @@ func (c Cell) init(row int8, col int8, value int8) Cell {
 	return c
 }
 
-func (p Pos) eqRow(other Pos) bool {
-	return p.Row == other.Row
+func (p Pos) eqRow(others ...Pos) bool {
+	for _, other := range others {
+		if p.Row != other.Row {
+			return false
+		}
+	}
+	return true
 }
 
-func (p Pos) eqColumn(other Pos) bool {
-	return p.Column == other.Column
+func (p Pos) eqColumn(others ...Pos) bool {
+	for _, other := range others {
+		if p.Column != other.Column {
+			return false
+		}
+	}
+	return true
 }
 
-func (p Pos) eqBox(other Pos) bool {
-	return p.Box == other.Box
+func (p Pos) eqBox(others ...Pos) bool {
+	for _, other := range others {
+		if p.Box != other.Box {
+			return false
+		}
+	}
+	return true
 }
 
 func (p Pos) sees(other Pos) bool {
@@ -815,7 +830,7 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 
 	type pair struct {
 		getCells   func(int8) []Cell
-		isSameLine func(Pos, Pos) bool
+		isSameLine func(Pos, ...Pos) bool
 	}
 
 	fpairs := []pair{
@@ -867,6 +882,134 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
+func (s *Sudoku) findYWings() finderResult {
+	found := []Cell{}
+	interesting := make(map[Pos][]int8)
+
+	prev := s.Candidates[0]
+	nums := []int8{prev.Value}
+
+	for _, cell := range s.Candidates[1:] {
+		if prev.Pos == cell.Pos {
+			nums = append(nums, cell.Value)
+		} else {
+			if len(nums) == 2 {
+				interesting[prev.Pos] = nums
+			}
+
+			nums = []int8{cell.Value}
+		}
+		prev = cell
+	}
+
+	if len(nums) == 2 {
+		interesting[prev.Pos] = nums
+	}
+
+	poss := []Pos{}
+	for key, _ := range interesting {
+		poss = append(poss, key)
+	}
+
+	// fmt.Println("y-wing interesting", interesting)
+	combs := Combination(poss, 3)
+
+	for {
+		idxs := combs.Next()
+		if idxs == nil {
+			break
+		}
+
+		out := make([]Pos, len(idxs))
+		nums := []int8{}
+
+		for i, n := range idxs {
+			out[i] = poss[n]
+
+			nums = append(nums, interesting[poss[n]]...)
+		}
+
+		sortInt8(nums)
+		nums = dedupeInt8(nums)
+
+		if len(nums) != 3 {
+			continue
+		}
+
+		// fmt.Println("y-wing 1", out, nums)
+
+		perms := Permutation(out)
+		for {
+			idxs := perms.Next()
+			if idxs == nil {
+				break
+			}
+
+			out2 := make([]Pos, len(idxs))
+
+			for i, n := range idxs {
+				out2[i] = out[n]
+			}
+
+			w1, pivot, w2 := out2[0], out2[1], out2[2]
+
+			// Avoid duplicate wings
+			if w2.less(&w1) {
+				continue
+			}
+
+			if !(pivot.sees(w1) && pivot.sees(w2)) {
+				continue
+			}
+
+			if w1.eqColumn(pivot, w2) ||
+				w1.eqRow(pivot, w2) ||
+				w2.eqBox(pivot, w2) {
+				// fmt.Println("y-wing is a naked triple", w1, pivot, w2)
+				continue
+			}
+
+			fun := func(p Pos) mapset.Set {
+				set := mapset.NewSet()
+
+				for _, n := range interesting[p] {
+					set.Add(n)
+				}
+
+				return set
+			}
+
+			set1 := fun(w1)
+			set2 := fun(w2)
+			pset := fun(pivot)
+
+			// wings have common number
+			nset := set1.Intersect(set2)
+
+			if !(nset.Cardinality() == 1 &&
+				pset.IsSubset(set1.Union(set2).Difference(nset))) {
+				continue
+			}
+
+			// fmt.Println("y-wing 2", w1, pivot, w2, set1, set2, pset, set1.Union(set2).Union(pset))
+
+			common := []int8{}
+			for _, n := range nset.ToSlice() {
+				common = append(common, n.(int8))
+			}
+			n := common[0]
+
+			nfound := filter(s.Candidates, func(c Cell) bool {
+				return c.Value == n && c.Pos.sees(w1) && c.Pos.sees(w2)
+			})
+
+			found = append(found, nfound...)
+		}
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -893,6 +1036,7 @@ func (s *Sudoku) solve() {
 		s.findNakedGroups4,
 		s.findPointingPairs,
 		s.findBoxlineReduction,
+		s.findYWings,
 	}
 
 	fmt.Println("begin", len(s.Candidates))
@@ -901,6 +1045,10 @@ func (s *Sudoku) solve() {
 
 PROGRESS:
 	for finderIdx < finderCount {
+		if len(s.Candidates) == 0 {
+			return
+		}
+
 		// fmt.Println("Finder", finderIdx)
 
 		res := finders[finderIdx]()
@@ -914,6 +1062,10 @@ PROGRESS:
 		if len(res.Eliminated) > 0 {
 			fmt.Println("Eliminated", res.Eliminated)
 			s.updateCandidates(res.Eliminated)
+		}
+
+		if len(s.Candidates) == 0 {
+			return
 		}
 
 		if len(res.Solved) != 0 || len(res.Eliminated) != 0 {
@@ -952,7 +1104,9 @@ func ucpos(cells []Cell) []Pos {
 
 func main() {
 	// grid1 := "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
-	grid1 := "014600300050000007090840100000400800600050009007009000008016030300000010009008570"
+	// grid1 := "014600300050000007090840100000400800600050009007009000008016030300000010009008570"
+	// grid1 := "000921003009000060000000500080403006007000800500700040003000000020000700800195000"
+	grid1 := "000040700500780020070002006810007900460000051009600078900800010080064009002050000"
 
 	err := printGrid(grid1)
 	if err != nil {
