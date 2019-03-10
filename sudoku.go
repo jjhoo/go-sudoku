@@ -394,6 +394,28 @@ func (c Cell) less(other *Cell) bool {
 	return false
 }
 
+func (c Cell) inColumn(others []Cell) bool {
+	for _, other := range others {
+		if c.Pos.Column != other.Pos.Column {
+			return false
+		}
+	}
+	return true
+}
+
+func (c Cell) inRow(others []Cell) bool {
+	for _, other := range others {
+		if c.Pos.Row != other.Pos.Row {
+			return false
+		}
+	}
+	return true
+}
+
+func (c Cell) inLine(others []Cell) bool {
+	return c.inRow(others) || c.inColumn(others)
+}
+
 func (s *Sudoku) updateSolved(solved []Cell) {
 	for _, sol := range solved {
 		idx := (sol.Pos.Row-1)*9 + (sol.Pos.Column - 1)
@@ -731,6 +753,46 @@ func (s *Sudoku) findNakedGroups4() finderResult {
 	})
 }
 
+func (s *Sudoku) findPointingPairs() finderResult {
+	found := []Cell{}
+
+	var boxnum int8
+	for boxnum = 1; boxnum < 10; boxnum++ {
+		boxCells := s.getCandidateBox(boxnum)
+		nums := uniqueNumbers(boxCells)
+
+		for _, n := range nums {
+			cells := filter(boxCells, func(c Cell) bool {
+				return c.Value == n
+			})
+
+			if !(len(cells) == 2 || len(cells) == 3) {
+				continue
+			}
+
+			var others []Cell
+			if cells[0].inRow(cells[1:]) {
+				others = s.getCandidateRow(cells[0].Pos.Row)
+			} else if cells[0].inColumn(cells[1:]) {
+				others = s.getCandidateColumn(cells[0].Pos.Column)
+			} else {
+				continue
+			}
+
+			nfound := filter(others, func(c Cell) bool {
+				return c.Value == n && !cells[0].Pos.eqBox(c.Pos)
+			})
+
+			if len(nfound) > 0 {
+				// fmt.Println("pointing pairs", boxnum, n, cells, nfound)
+				found = append(found, nfound...)
+			}
+		}
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -754,7 +816,8 @@ func (s *Sudoku) solve() {
 		s.findSingles,
 		s.findNakedGroups2,
 		s.findNakedGroups3,
-		s.findNakedGroups4}
+		s.findNakedGroups4,
+		s.findPointingPairs}
 
 	fmt.Println("begin", len(s.Candidates))
 	finderCount := len(finders)
