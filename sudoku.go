@@ -232,6 +232,44 @@ func (c Cell) eqValue(other Cell) bool {
 	return c.Value == other.Value
 }
 
+func validateSet(cells []Cell) bool {
+	nums := make(map[int8]Pos)
+
+	for _, cell := range cells {
+		if _, ok := nums[cell.Value]; ok {
+			return false
+		}
+		nums[cell.Value] = cell.Pos
+	}
+
+	return true
+}
+
+func (s *Sudoku) validateSolved() {
+	type pair struct {
+		desc string
+		fun  func(int8) []Cell
+	}
+
+	var i int8
+	pairs := []pair{
+		{"row", s.getRow}, {"column", s.getColumn}, {"box", s.getBox},
+	}
+
+	for i = 1; i < 10; i++ {
+		for _, p := range pairs {
+			set := p.fun(i)
+			if !validateSet(set) {
+				panic(fmt.Sprintf("Invalid %s %d %v", p.desc, i, set))
+			}
+		}
+	}
+}
+
+func (s *Sudoku) validate() {
+	s.validateSolved()
+}
+
 func (s *Sudoku) initGrid(grids string) error {
 	if len(grids) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grids)
@@ -705,6 +743,7 @@ PROGRESS:
 			fmt.Println("Found", res.Solved)
 			s.updateSolved(res.Solved)
 		}
+		s.validate()
 
 		if len(res.Eliminated) > 0 {
 			fmt.Println("Eliminated", res.Eliminated)
