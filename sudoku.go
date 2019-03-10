@@ -609,29 +609,41 @@ func main() {
 		fmt.Println("Found", fresult.Solved)
 	}
 
-	test := s.getCandidateRow(1)
-	// poss := ucpos(test)
-	nums := uniqueNumbers(test)
-	visitf := func(idxs []int) {
-		out := make([]int8, len(idxs))
+	if false {
+		test := s.getCandidateRow(1)
+		// poss := ucpos(test)
+		nums := uniqueNumbers(test)
+		visitf := func(idxs []int) {
+			out := make([]int8, len(idxs))
 
-		for i, n := range idxs {
-			out[i] = nums[n]
+			for i, n := range idxs {
+				out[i] = nums[n]
+			}
+			fmt.Println("visit", out)
 		}
-		fmt.Println("visit", out)
-	}
 
-	foo := Permutation(nums, visitf)
-	fmt.Println("permutation test", nums, foo)
+		foo := Permutation(nums)
+		fmt.Println("permutation test", nums, foo)
 
-	for foo.Next() {
-		foo.Visit()
-	}
+		for {
+			idxs := foo.Next()
 
-	bar := Combination(nums, 2, visitf)
-	fmt.Println("combination test", nums, bar)
+			if idxs == nil {
+				break
+			}
+			visitf(idxs)
+		}
 
-	for bar.Next() {
-		bar.Visit()
+		bar := Combination(nums, 2)
+		fmt.Println("combination test", nums, bar)
+
+		for {
+			idxs := bar.Next()
+
+			if idxs == nil {
+				break
+			}
+			visitf(idxs)
+		}
 	}
 }

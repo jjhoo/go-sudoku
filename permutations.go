@@ -24,11 +24,10 @@ type permutation struct {
 	length int
 
 	visitFlag bool
-	visit     func([]int)
 }
 
-func Permutation(slice interface{}, visitf func([]int)) permutation {
-	tmp := permutation{visit: visitf, visitFlag: true}
+func Permutation(slice interface{}) permutation {
+	tmp := permutation{visitFlag: true}
 
 	xs := reflect.ValueOf(slice)
 	tmp.length = xs.Len()
@@ -44,17 +43,18 @@ func Permutation(slice interface{}, visitf func([]int)) permutation {
 	return tmp
 }
 
-func (p *permutation) Visit() {
+func (p *permutation) visit() []int {
 	n := p.length + 1
-	p.visit(p.ajs[1:n])
 	p.visitFlag = false
+
+	return p.ajs[1:n]
 }
 
 // Essentially a translation of implemention found in
 // https://github.com/jjhoo/sudoku-newlisp/blob/master/sudoku.lsp
-func (p *permutation) Next() bool {
+func (p *permutation) Next() []int {
 	if p.visitFlag {
-		return true
+		return p.visit()
 	}
 
 	// L2
@@ -72,7 +72,8 @@ func (p *permutation) Next() bool {
 	}
 
 	if j == 0 {
-		return false
+		p.visitFlag = true
+		return p.visit()
 	}
 
 	// L3
@@ -97,5 +98,7 @@ func (p *permutation) Next() bool {
 		k++
 		l--
 	}
-	return true
+
+	p.visitFlag = true
+	return p.visit()
 }

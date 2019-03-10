@@ -27,13 +27,11 @@ type combination struct {
 	k      int
 
 	visitFlag bool
-	visit     func([]int)
 }
 
 // Knuth, algorithm T
-func Combination(slice interface{}, koo int, visitf func([]int)) combination {
-	tmp := combination{visit: visitf, visitFlag: true,
-		koo: koo, j: koo, k: koo}
+func Combination(slice interface{}, koo int) combination {
+	tmp := combination{visitFlag: true, koo: koo, j: koo, k: koo}
 
 	xs := reflect.ValueOf(slice)
 	tmp.length = xs.Len()
@@ -50,17 +48,18 @@ func Combination(slice interface{}, koo int, visitf func([]int)) combination {
 	return tmp
 }
 
-func (c *combination) Visit() {
+func (c *combination) visit() []int {
 	n := c.k + 1
-	c.visit(c.cjs[1:n])
 	c.visitFlag = false
+
+	return c.cjs[1:n]
 }
 
 // Essentially a translation of implemention found in
 // https://github.com/jjhoo/sudoku-newlisp/blob/master/sudoku.lsp
-func (c *combination) Next() bool {
+func (c *combination) Next() []int {
 	if c.visitFlag {
-		return true
+		return c.visit()
 	}
 
 	if c.j > 0 {
@@ -70,13 +69,15 @@ func (c *combination) Next() bool {
 		c.j--
 
 		c.visitFlag = true
-		return true
+		return c.visit()
 	}
 
 	// T3
 	if (c.cjs[1] + 1) < c.cjs[2] {
 		c.cjs[1]++
-		return true
+
+		c.visitFlag = true
+		return c.visit()
 	}
 
 	// T4
@@ -97,7 +98,7 @@ func (c *combination) Next() bool {
 
 	// T5
 	if c.j > c.k {
-		return false
+		return nil
 	}
 
 	// T6
@@ -105,5 +106,5 @@ func (c *combination) Next() bool {
 	c.j--
 
 	c.visitFlag = true
-	return true
+	return c.visit()
 }
