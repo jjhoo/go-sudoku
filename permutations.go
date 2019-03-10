@@ -72,8 +72,8 @@ func (p *permutation) Next() []int {
 	}
 
 	if j == 0 {
-		p.visitFlag = true
-		return p.visit()
+		p.visitFlag = false
+		return nil
 	}
 
 	// L3
