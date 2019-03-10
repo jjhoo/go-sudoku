@@ -328,8 +328,8 @@ func (s Sudoku) printGrid() {
 			fmt.Print("| ")
 		}
 		v := cell.Value
-		if v == '0' {
-			fmt.Printf(" ")
+		if v == 0 {
+			fmt.Printf(".")
 		} else {
 			fmt.Printf("%d", v)
 		}
