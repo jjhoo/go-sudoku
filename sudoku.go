@@ -284,7 +284,19 @@ func (s *Sudoku) initCandidates() {
 }
 
 func (s Sudoku) printGrid() {
-	fmt.Println(filter(s.Solved, func(c Cell) bool { return c.Value != 0 }))
+	for i, cell := range s.Solved {
+		v := cell.Value
+		if v == '0' {
+			fmt.Printf(" ")
+		} else {
+			fmt.Printf("%d", v)
+		}
+		if (i+1)%9 == 0 {
+			fmt.Print("\n")
+		} else {
+			fmt.Print(" ")
+		}
+	}
 }
 
 func (s Sudoku) ucpos() []Pos {
