@@ -30,44 +30,14 @@ type CellNumbers struct {
 	Numbers []int8
 }
 
-type cellGetter func(x int8) []Cell
-type cellFinder func(cells []Cell) finderResult
+type cellGetter func(x int8) CellList
+type cellFinder func(cells CellList) finderResult
 type cellPredicate func(Cell) bool
 
-func filter(cells []Cell, pred cellPredicate) []Cell {
-	res := []Cell{}
-
-	for _, cell := range cells {
-		if pred(cell) {
-			res = append(res, cell)
-		}
-	}
-
-	return res
-}
-
-func remove(cells []Cell, pred cellPredicate) []Cell {
-	res := []Cell{}
-
-	for _, cell := range cells {
-		if !pred(cell) {
-			res = append(res, cell)
-		}
-	}
-
-	return res
-}
-
-func getCellNumbers(pos Pos, cands []Cell) CellNumbers {
-	cells := filter(cands, func(c Cell) bool {
-		return c.Pos == pos
-	})
-
-	nums := []int8{}
-
-	for _, c := range cells {
-		nums = append(nums, c.Value)
-	}
+func getCellNumbers(pos Pos, cands CellList) CellNumbers {
+	nums := cands.FilterMapInt8(
+		func(c Cell) int8 { return c.Value },
+		func(c Cell) bool { return c.Pos == pos })
 
 	return CellNumbers{Pos: pos, Numbers: nums}
 }
@@ -112,7 +82,7 @@ func (c Cell) less(other *Cell) bool {
 	return false
 }
 
-func (c Cell) inBox(others []Cell) bool {
+func (c Cell) inBox(others CellList) bool {
 	for _, other := range others {
 		if c.Pos.Box != other.Pos.Box {
 			return false
@@ -121,41 +91,23 @@ func (c Cell) inBox(others []Cell) bool {
 	return true
 }
 
-func (c Cell) inColumn(others []Cell) bool {
-	for _, other := range others {
-		if c.Pos.Column != other.Pos.Column {
-			return false
-		}
-	}
-	return true
+func (c Cell) inColumn(others CellList) bool {
+	return others.All(func(other Cell) bool {
+		return c.Pos.Column == other.Pos.Column
+	})
 }
 
-func (c Cell) inRow(others []Cell) bool {
-	for _, other := range others {
-		if c.Pos.Row != other.Pos.Row {
-			return false
-		}
-	}
-	return true
+func (c Cell) inRow(others CellList) bool {
+	return others.All(func(other Cell) bool {
+		return c.Pos.Row == other.Pos.Row
+	})
 }
 
-func (c Cell) inLine(others []Cell) bool {
+func (c Cell) inLine(others CellList) bool {
 	return c.inRow(others) || c.inColumn(others)
 }
 
-func mapCellInt8(cells []Cell, fn func(Cell) int8) []int8 {
-	n := len(cells)
-
-	res := make([]int8, n)
-
-	for i := 0; i < n; i++ {
-		res[i] = fn(cells[i])
-	}
-
-	return res
-}
-
-func cellPositions(cells []Cell) []Pos {
+func cellPositions(cells CellList) []Pos {
 	n := len(cells)
 
 	res := make([]Pos, n)
@@ -167,13 +119,13 @@ func cellPositions(cells []Cell) []Pos {
 	return res
 }
 
-func dedupeCells(cells []Cell) []Cell {
+func dedupeCells(cells CellList) CellList {
 	if len(cells) <= 1 {
 		return cells
 	}
 
 	prev := cells[0]
-	res := []Cell{prev}
+	res := CellList{prev}
 
 	for _, cell := range cells[1:] {
 		if cell != prev {
@@ -185,33 +137,27 @@ func dedupeCells(cells []Cell) []Cell {
 	return res
 }
 
-func sortCells(array []Cell) {
+func sortCells(array CellList) {
 	sort.Slice(array, func(i, j int) bool {
 		return array[i].less(&array[j])
 	})
 }
 
-func numbers(cells []Cell) []int8 {
-	res := mapCellInt8(cells, func(cell Cell) int8 {
-		return cell.Value
-	})
+func numbers(cells CellList) []int8 {
+	res := cells.MapInt8(func(cell Cell) int8 { return cell.Value })
 
-	sortInt8(res)
 	return res
 }
 
-func uniqueNumbers(cells []Cell) []int8 {
-	res := mapCellInt8(cells, func(cell Cell) int8 {
-		return cell.Value
-	})
-
+func uniqueNumbers(cells CellList) []int8 {
+	res := numbers(cells)
 	sortInt8(res)
 	res = dedupeInt8(res)
 
 	return res
 }
 
-func uniqueCells(cells []Cell) []Cell {
+func uniqueCells(cells CellList) CellList {
 	sortCells(cells)
 	res := dedupeCells(cells)
 

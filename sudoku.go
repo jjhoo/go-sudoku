@@ -13,6 +13,7 @@
 //  You should have received a copy of the GNU Affero General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+//go:generate fungen -types Box,Pos,Cell,numCount,int8,int
 package main
 
 import (
@@ -22,13 +23,13 @@ import (
 )
 
 type Sudoku struct {
-	Solved     []Cell
-	Candidates []Cell
+	Solved     CellList
+	Candidates CellList
 }
 
 type finderResult struct {
-	Solved     []Cell
-	Eliminated []Cell
+	Solved     CellList
+	Eliminated CellList
 }
 
 func (s Sudoku) getCell(row, col int8) Cell {
@@ -36,46 +37,46 @@ func (s Sudoku) getCell(row, col int8) Cell {
 	return s.Solved[idx]
 }
 
-func (s Sudoku) getRow(row int8) []Cell {
-	return filter(s.Solved, func(c Cell) bool {
+func (s Sudoku) getRow(row int8) CellList {
+	return s.Solved.Filter(func(c Cell) bool {
 		return c.Value != 0 && c.Pos.Row == row
 	})
 }
 
-func (s Sudoku) getColumn(col int8) []Cell {
-	return filter(s.Solved, func(c Cell) bool {
+func (s Sudoku) getColumn(col int8) CellList {
+	return s.Solved.Filter(func(c Cell) bool {
 		return c.Value != 0 && c.Pos.Column == col
 	})
 }
 
-func (s Sudoku) getBox(box int8) []Cell {
+func (s Sudoku) getBox(box int8) CellList {
 	b := numToBox(box)
-	return filter(s.Solved, func(c Cell) bool {
+	return s.Solved.Filter(func(c Cell) bool {
 		return c.Value != 0 && c.Pos.Box == b
 	})
 }
 
-func (s Sudoku) getCandidateCell(row, col int8) []Cell {
-	return filter(s.Candidates, func(c Cell) bool {
+func (s Sudoku) getCandidateCell(row, col int8) CellList {
+	return s.Candidates.Filter(func(c Cell) bool {
 		return c.Pos.Row == row && c.Pos.Column == col
 	})
 }
 
-func (s Sudoku) getCandidateRow(row int8) []Cell {
-	return filter(s.Candidates, func(c Cell) bool {
+func (s Sudoku) getCandidateRow(row int8) CellList {
+	return s.Candidates.Filter(func(c Cell) bool {
 		return c.Pos.Row == row
 	})
 }
 
-func (s Sudoku) getCandidateColumn(col int8) []Cell {
-	return filter(s.Candidates, func(c Cell) bool {
+func (s Sudoku) getCandidateColumn(col int8) CellList {
+	return s.Candidates.Filter(func(c Cell) bool {
 		return c.Pos.Column == col
 	})
 }
 
-func (s Sudoku) getCandidateBox(box int8) []Cell {
+func (s Sudoku) getCandidateBox(box int8) CellList {
 	b := numToBox(box)
-	return filter(s.Candidates, func(c Cell) bool {
+	return s.Candidates.Filter(func(c Cell) bool {
 		return c.Pos.Box == b
 	})
 }
@@ -87,7 +88,7 @@ func (s Sudoku) getCellNumbers(pos Pos) CellNumbers {
 func (s *Sudoku) validateSolved() {
 	type pair struct {
 		desc string
-		fun  func(int8) []Cell
+		fun  func(int8) CellList
 	}
 
 	var i int8
@@ -117,7 +118,7 @@ func (s *Sudoku) initGrid(grids string) error {
 	var row int8 = 1
 	var column int8 = 1
 
-	s.Solved = make([]Cell, 81)
+	s.Solved = make(CellList, 81)
 
 	var i int
 	var c rune
@@ -145,7 +146,7 @@ func (s *Sudoku) initGrid(grids string) error {
 }
 
 func (s *Sudoku) initCandidates() {
-	s.Candidates = []Cell{}
+	s.Candidates = CellList{}
 
 	for i := 1; i < 10; i++ {
 		for j := 1; j < 10; j++ {
@@ -161,8 +162,8 @@ func (s *Sudoku) initCandidates() {
 			continue
 		}
 
-		s.Candidates = remove(s.Candidates, func(c Cell) bool {
-			return solved.Pos == c.Pos || (solved.Pos.sees(c.Pos) && solved.eqValue(c))
+		s.Candidates = s.Candidates.Filter(func(c Cell) bool {
+			return !(solved.Pos == c.Pos || (solved.Pos.sees(c.Pos) && solved.eqValue(c)))
 		})
 	}
 }
@@ -216,21 +217,21 @@ func (s Sudoku) ucpos() []Pos {
 	return res
 }
 
-func (s *Sudoku) updateSolved(solved []Cell) {
+func (s *Sudoku) updateSolved(solved CellList) {
 	for _, sol := range solved {
 		idx := (sol.Pos.Row-1)*9 + (sol.Pos.Column - 1)
 		s.Solved[idx].Value = sol.Value
 
-		s.Candidates = remove(s.Candidates, func(c Cell) bool {
-			return sol.Pos == c.Pos || (sol.Pos.sees(c.Pos) && sol.eqValue(c))
+		s.Candidates = s.Candidates.Filter(func(c Cell) bool {
+			return !(sol.Pos == c.Pos || (sol.Pos.sees(c.Pos) && sol.eqValue(c)))
 		})
 	}
 }
 
-func (s *Sudoku) updateCandidates(eliminated []Cell) {
+func (s *Sudoku) updateCandidates(eliminated CellList) {
 	for _, cell := range eliminated {
-		s.Candidates = remove(s.Candidates, func(c Cell) bool {
-			return cell.Pos == c.Pos && cell.Value == c.Value
+		s.Candidates = s.Candidates.Filter(func(c Cell) bool {
+			return !(cell.Pos == c.Pos && cell.Value == c.Value)
 		})
 	}
 }
@@ -238,10 +239,10 @@ func (s *Sudoku) updateCandidates(eliminated []Cell) {
 // Simple case where there is only one candidate left for a cell
 func (s *Sudoku) findSinglesSimple() finderResult {
 	poss := s.ucpos()
-	found := []Cell{}
+	found := CellList{}
 
 	for _, pos := range poss {
-		cands := filter(s.Candidates, func(c Cell) bool {
+		cands := s.Candidates.Filter(func(c Cell) bool {
 			return pos == c.Pos
 		})
 
@@ -257,8 +258,8 @@ func (s *Sudoku) findSinglesSimple() finderResult {
 func (s *Sudoku) finder(cf cellFinder) finderResult {
 	funs := []cellGetter{s.getCandidateRow, s.getCandidateColumn, s.getCandidateBox}
 
-	found := []Cell{}
-	eliminated := []Cell{}
+	found := CellList{}
+	eliminated := CellList{}
 
 	for _, fun := range funs {
 		for i := 1; i < 10; i++ {
@@ -288,14 +289,14 @@ func (s *Sudoku) finder(cf cellFinder) finderResult {
 
 // Only one candidate left for a number in row / column / box
 func (s *Sudoku) findSingles() finderResult {
-	return s.finder(func(cells []Cell) finderResult {
+	return s.finder(func(cells CellList) finderResult {
 		nums := uniqueNumbers(cells)
 		// fmt.Println(nums)
 
-		found := []Cell{}
+		found := CellList{}
 
 		for _, n := range nums {
-			ncells := filter(cells, func(cell Cell) bool {
+			ncells := cells.Filter(func(cell Cell) bool {
 				return cell.Value == n
 			})
 
@@ -309,7 +310,7 @@ func (s *Sudoku) findSingles() finderResult {
 	})
 }
 
-func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
+func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 	// fmt.Println("naked set", limit)
 	poss := ucpos(cands)
 
@@ -318,33 +319,27 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 	}
 
 	nums := numbers(cands)
-	ncounts := numberCounts(nums)
-	unums := []int8{}
+	sortInt8(nums)
 
-	for _, nc := range ncounts {
-		unums = append(unums, nc.num)
-	}
+	ncounts := numberCounts(nums)
+	unums := ncounts.MapInt8(func(nc numCount) int8 { return nc.num })
 
 	// fmt.Println("counts", cands, ncounts, unums)
-	found := []Cell{}
+	found := CellList{}
 
 	combs := Combination(unums, limit)
 	for {
 		matches := []CellNumbers{}
 		others := []Pos{}
 
-		idxs := combs.Next()
+		var idxs intList = combs.Next()
 		if idxs == nil {
 			break
 		}
 
-		comb := make([]int8, len(idxs))
+		comb := idxs.MapInt8(func (n int) int8 { return nums[n] })
 
-		for i, n := range idxs {
-			comb[i] = unums[n]
-		}
 		// fmt.Println("visit comb", comb)
-
 	OUTER:
 		for _, pos := range ucpos(cands) {
 			cnums := getCellNumbers(pos, cands)
@@ -377,7 +372,7 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 		if len(matches) == limit && len(others) > 0 {
 			// fmt.Println("matches", matches, ", others", others)
 
-			nfound := filter(cands, func(c Cell) bool {
+			nfound := cands.Filter(func(c Cell) bool {
 				for _, other := range others {
 					if c.Pos != other {
 						continue
@@ -402,7 +397,7 @@ func findNakedGroupsInSet(limit int, cands []Cell) finderResult {
 }
 
 func (s *Sudoku) findNakedGroups2() finderResult {
-	return s.finder(func(cells []Cell) finderResult {
+	return s.finder(func(cells CellList) finderResult {
 		found := findNakedGroupsInSet(2, cells)
 
 		found.Eliminated = uniqueCells(found.Eliminated)
@@ -412,7 +407,7 @@ func (s *Sudoku) findNakedGroups2() finderResult {
 }
 
 func (s *Sudoku) findNakedGroups3() finderResult {
-	return s.finder(func(cells []Cell) finderResult {
+	return s.finder(func(cells CellList) finderResult {
 		found := findNakedGroupsInSet(3, cells)
 
 		found.Eliminated = uniqueCells(found.Eliminated)
@@ -422,7 +417,7 @@ func (s *Sudoku) findNakedGroups3() finderResult {
 }
 
 func (s *Sudoku) findNakedGroups4() finderResult {
-	return s.finder(func(cells []Cell) finderResult {
+	return s.finder(func(cells CellList) finderResult {
 		found := findNakedGroupsInSet(4, cells)
 
 		found.Eliminated = uniqueCells(found.Eliminated)
@@ -432,7 +427,7 @@ func (s *Sudoku) findNakedGroups4() finderResult {
 }
 
 func (s *Sudoku) findPointingPairs() finderResult {
-	found := []Cell{}
+	found := CellList{}
 
 	var boxnum int8
 	for boxnum = 1; boxnum < 10; boxnum++ {
@@ -440,7 +435,7 @@ func (s *Sudoku) findPointingPairs() finderResult {
 		nums := uniqueNumbers(boxCells)
 
 		for _, n := range nums {
-			cells := filter(boxCells, func(c Cell) bool {
+			cells := boxCells.Filter(func(c Cell) bool {
 				return c.Value == n
 			})
 
@@ -448,7 +443,7 @@ func (s *Sudoku) findPointingPairs() finderResult {
 				continue
 			}
 
-			var others []Cell
+			var others CellList
 			if cells[0].inRow(cells[1:]) {
 				others = s.getCandidateRow(cells[0].Pos.Row)
 			} else if cells[0].inColumn(cells[1:]) {
@@ -457,7 +452,7 @@ func (s *Sudoku) findPointingPairs() finderResult {
 				continue
 			}
 
-			nfound := filter(others, func(c Cell) bool {
+			nfound := others.Filter(func(c Cell) bool {
 				return c.Value == n && !cells[0].Pos.eqBox(c.Pos)
 			})
 
@@ -472,10 +467,10 @@ func (s *Sudoku) findPointingPairs() finderResult {
 }
 
 func (s *Sudoku) findBoxlineReduction() finderResult {
-	found := []Cell{}
+	found := CellList{}
 
 	type pair struct {
-		getCells   func(int8) []Cell
+		getCells   func(int8) CellList
 		isSameLine func(Pos, ...Pos) bool
 	}
 
@@ -495,6 +490,8 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 			}
 
 			nums := numbers(cells)
+			sortInt8(nums)
+
 			ncounts := numberCounts(nums)
 
 			for _, nc := range ncounts {
@@ -504,7 +501,7 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 
 				// fmt.Println("boxline: good count")
 
-				ncells := filter(cells, func(c Cell) bool {
+				ncells := cells.Filter(func(c Cell) bool {
 					return nc.num == c.Value
 				})
 
@@ -515,7 +512,7 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 				// fmt.Println("boxline: in same box", ncells)
 
 				// Needs to be same value, same box, different row/col
-				nfound := filter(s.Candidates, func(c Cell) bool {
+				nfound := s.Candidates.Filter(func(c Cell) bool {
 					return ncells[0].Value == c.Value && ncells[0].Pos.Box == c.Pos.Box && !fpair.isSameLine(ncells[0].Pos, c.Pos)
 				})
 
@@ -529,7 +526,7 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 }
 
 func (s *Sudoku) findYWings() finderResult {
-	found := []Cell{}
+	found := CellList{}
 	interesting := make(map[Pos][]int8)
 
 	prev := s.Candidates[0]
@@ -561,13 +558,14 @@ func (s *Sudoku) findYWings() finderResult {
 	combs := Combination(poss, 3)
 
 	for {
-		idxs := combs.Next()
+		var idxs intList = combs.Next()
 		if idxs == nil {
 			break
 		}
 
-		out := make([]Pos, len(idxs))
-		nums := []int8{}
+		out := make(PosList, len(idxs))
+
+		nums := int8List{}
 
 		for i, n := range idxs {
 			out[i] = poss[n]
@@ -586,16 +584,12 @@ func (s *Sudoku) findYWings() finderResult {
 
 		perms := Permutation(out)
 		for {
-			idxs := perms.Next()
+			var idxs intList = perms.Next()
 			if idxs == nil {
 				break
 			}
 
-			out2 := make([]Pos, len(idxs))
-
-			for i, n := range idxs {
-				out2[i] = out[n]
-			}
+			out2 := idxs.MapPos(func(n int) Pos { return out[n] })
 
 			w1, pivot, w2 := out2[0], out2[1], out2[2]
 
@@ -608,9 +602,7 @@ func (s *Sudoku) findYWings() finderResult {
 				continue
 			}
 
-			if w1.eqColumn(pivot, w2) ||
-				w1.eqRow(pivot, w2) ||
-				w2.eqBox(pivot, w2) {
+			if w1.eqColumn(pivot, w2) || w1.eqRow(pivot, w2) || w2.eqBox(pivot, w2) {
 				// fmt.Println("y-wing is a naked triple", w1, pivot, w2)
 				continue
 			}
@@ -645,7 +637,7 @@ func (s *Sudoku) findYWings() finderResult {
 			}
 			n := common[0]
 
-			nfound := filter(s.Candidates, func(c Cell) bool {
+			nfound := s.Candidates.Filter(func(c Cell) bool {
 				return c.Value == n && c.Pos.sees(w1) && c.Pos.sees(w2)
 			})
 
@@ -741,7 +733,7 @@ func dedupePos(poss []Pos) []Pos {
 	return res
 }
 
-func ucpos(cells []Cell) []Pos {
+func ucpos(cells CellList) []Pos {
 	poss := cellPositions(cells)
 	poss = dedupePos(poss)
 

@@ -20,7 +20,7 @@ import (
 	"sort"
 )
 
-func dedupeInt8(ns []int8) []int8 {
+func dedupeInt8(ns []int8) int8List {
 	if len(ns) <= 1 {
 		return ns
 	}
@@ -49,20 +49,18 @@ type numCount struct {
 	count int8
 }
 
-func numberCounts(nums []int8) []numCount {
+func numberCounts(nums int8List) numCountList {
 	nnums := dedupeInt8(nums)
 
-	counts := []numCount{}
-
-	for _, n := range nnums {
-		var count int8 = 0
-		for _, nn := range nums {
+	counts := nnums.MapNumCount(func(n int8) numCount {
+		count := nums.Reduce(0, func(acc, nn int8) int8 {
 			if n == nn {
-				count++
+				acc++
 			}
-		}
-		counts = append(counts, numCount{num: n, count: count})
-	}
+			return acc
+		})
+		return numCount{num: n, count: count}
+	})
 
 	return counts
 }
