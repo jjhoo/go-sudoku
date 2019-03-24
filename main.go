@@ -83,11 +83,11 @@ func main() {
 			fmt.Println("visit", out)
 		}
 
-		foo := Permutation(nums)
+		foo := newPermutation(len(nums))
 		fmt.Println("permutation test", nums, foo)
 
 		for {
-			idxs := foo.Next()
+			idxs := foo.next()
 
 			if idxs == nil {
 				break
@@ -95,11 +95,11 @@ func main() {
 			visitf(idxs)
 		}
 
-		bar := Combination(nums, 2)
+		bar := newCombination(len(nums), 2)
 		fmt.Println("combination test", nums, bar)
 
 		for {
-			idxs := bar.Next()
+			idxs := bar.next()
 
 			if idxs == nil {
 				break

@@ -342,12 +342,12 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 	// fmt.Println("counts", cands, ncounts, unums)
 	found := CellList{}
 
-	combs := Combination(unums, limit)
+	combs := newCombination(len(unums), limit)
 	for {
 		matches := []CellNumbers{}
 		others := []Pos{}
 
-		var idxs intList = combs.Next()
+		var idxs intList = combs.next()
 		if idxs == nil {
 			break
 		}
@@ -570,10 +570,10 @@ func (s *Sudoku) findYWings() finderResult {
 	}
 
 	// fmt.Println("y-wing interesting", interesting)
-	combs := Combination(poss, 3)
+	combs := newCombination(len(poss), 3)
 
 	for {
-		var idxs intList = combs.Next()
+		var idxs intList = combs.next()
 		if idxs == nil {
 			break
 		}
@@ -597,9 +597,9 @@ func (s *Sudoku) findYWings() finderResult {
 
 		// fmt.Println("y-wing 1", out, nums)
 
-		perms := Permutation(out)
+		perms := newPermutation(len(out))
 		for {
-			var idxs intList = perms.Next()
+			var idxs intList = perms.next()
 			if idxs == nil {
 				break
 			}

@@ -16,10 +16,7 @@
 
 package sudoku
 
-import (
-	"reflect"
-)
-
+// Permutation internal state data.
 type permutation struct {
 	ajs    []int
 	length int
@@ -27,11 +24,9 @@ type permutation struct {
 	visitFlag bool
 }
 
-func Permutation(slice interface{}) permutation {
-	p := permutation{visitFlag: true}
-
-	xs := reflect.ValueOf(slice)
-	p.length = xs.Len()
+// newPermutation initialize a permutation generator of length elements.
+func newPermutation(length int) *permutation {
+	p := permutation{visitFlag: true, length: length}
 
 	ajs := make([]int, p.length+2)
 	ajs[0] = 0
@@ -44,7 +39,7 @@ func Permutation(slice interface{}) permutation {
 
 	p.ajs = ajs
 
-	return p
+	return &p
 }
 
 func (p *permutation) visit() []int {
@@ -56,7 +51,9 @@ func (p *permutation) visit() []int {
 
 // Essentially a translation of implemention found in
 // https://github.com/jjhoo/sudoku-newlisp/blob/master/sudoku.lsp
-func (p *permutation) Next() []int {
+
+// Next() get indexes of next permutation or nil if generator has been exchausted.
+func (p *permutation) next() []int {
 	if p.visitFlag {
 		return p.visit()
 	}

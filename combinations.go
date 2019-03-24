@@ -16,10 +16,7 @@
 
 package sudoku
 
-import (
-	"reflect"
-)
-
+// Combination intenal state data.
 type combination struct {
 	cjs    []int
 	length int
@@ -31,11 +28,10 @@ type combination struct {
 }
 
 // Knuth, algorithm T
-func Combination(slice interface{}, koo int) combination {
-	c := combination{visitFlag: true, koo: koo, j: koo, k: koo}
 
-	xs := reflect.ValueOf(slice)
-	c.length = xs.Len()
+// newCombination initialize a combination generator of length elements.
+func newCombination(length, koo int) *combination {
+	c := combination{visitFlag: true, length: length, koo: koo, j: koo, k: koo}
 
 	c.cjs = make([]int, koo+1, koo+3)
 
@@ -45,7 +41,7 @@ func Combination(slice interface{}, koo int) combination {
 
 	c.cjs = append(c.cjs, c.length, 0)
 
-	return c
+	return &c
 }
 
 func (c *combination) visit() []int {
@@ -57,7 +53,9 @@ func (c *combination) visit() []int {
 
 // Essentially a translation of implemention found in
 // https://github.com/jjhoo/sudoku-newlisp/blob/master/sudoku.lsp
-func (c *combination) Next() []int {
+
+// Next get indexes of next combination or nil if generator has been exchausted.
+func (c *combination) next() []int {
 	if c.visitFlag {
 		return c.visit()
 	}
