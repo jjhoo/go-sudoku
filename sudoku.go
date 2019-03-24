@@ -666,7 +666,7 @@ func printGrid(grid string) error {
 	return nil
 }
 
-func (s *Sudoku) solve() {
+func (s *Sudoku) Solve() bool {
 	finders := []func() finderResult{
 		s.findSinglesSimple,
 		s.findSingles,
@@ -678,14 +678,14 @@ func (s *Sudoku) solve() {
 		s.findYWings,
 	}
 
-	fmt.Println("begin", len(s.Candidates))
+	// fmt.Println("begin", len(s.Candidates))
 	finderCount := len(finders)
 	finderIdx := 0
 
 PROGRESS:
 	for finderIdx < finderCount {
 		if len(s.Candidates) == 0 {
-			return
+			return true
 		}
 
 		// fmt.Println("Finder", finderIdx)
@@ -695,9 +695,6 @@ PROGRESS:
 		if len(res.Solved) > 0 {
 			fmt.Println("Found", res.Solved)
 			s.updateSolved(res.Solved)
-
-			s.printGrid()
-			fmt.Println(s.Candidates)
 		}
 		s.validate()
 
@@ -707,7 +704,7 @@ PROGRESS:
 		}
 
 		if len(s.Candidates) == 0 {
-			return
+			return true
 		}
 
 		if len(res.Solved) != 0 || len(res.Eliminated) != 0 {
@@ -717,6 +714,7 @@ PROGRESS:
 		}
 		finderIdx++
 	}
+	return false
 }
 
 func dedupePos(poss []Pos) []Pos {

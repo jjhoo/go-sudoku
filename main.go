@@ -48,7 +48,7 @@ func main() {
 
 	s.printGrid()
 	// fmt.Println(s.Candidates)
-	s.solve()
+	s.Solve()
 	s.printGrid()
 	fmt.Println(s.getGridString())
 
