@@ -8,52 +8,43 @@ import (
 func TestGrid1(t *testing.T) {
 	grid := "000040700500780020070002006810007900460000051009600078900800010080064009002050000"
 
-	s := Sudoku{}
-
-	err := s.initGrid(grid)
+	s, err := NewSudoku(grid)
 	if err != nil {
 		t.Error(err)
 	}
 
-	s.initCandidates()
 	if !s.Solve() {
 		t.Error(fmt.Errorf("Sudoku not solved: %v", grid))
 	}
-	s.printGrid()
+	s.PrintGrid()
 }
 
 func TestGrid2(t *testing.T) {
 	grid := "700600008800030000090000310006740005005806900400092100087000020000060009600008001"
 
-	s := Sudoku{}
-
-	err := s.initGrid(grid)
+	s, err := NewSudoku(grid)
 	if err != nil {
 		t.Error(err)
 	}
 
-	s.initCandidates()
 	if s.Solve() {
 		t.Error(fmt.Errorf("Sudoku solved: %v", grid))
 	}
-	s.printGrid()
+	s.PrintGrid()
 }
 
 func TestGrid3(t *testing.T) {
 	grid := "014600300050000007090840100000400800600050009007009000008016030300000010009008570"
 
-	s := Sudoku{}
-
-	err := s.initGrid(grid)
+	s, err := NewSudoku(grid)
 	if err != nil {
 		t.Error(err)
 	}
 
-	s.initCandidates()
 	if s.Solve() {
 		t.Error(fmt.Errorf("Sudoku solved: %v", grid))
 	}
-	s.printGrid()
+	s.PrintGrid()
 }
 
 func TestGrid4(t *testing.T) {
@@ -70,5 +61,5 @@ func TestGrid4(t *testing.T) {
 	if s.Solve() {
 		t.Error(fmt.Errorf("Sudoku solved: %v", grid))
 	}
-	s.printGrid()
+	s.PrintGrid()
 }

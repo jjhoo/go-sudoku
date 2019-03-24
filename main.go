@@ -35,7 +35,7 @@ func main() {
 
 	err = s.initGrid(grid1)
 	if err == nil {
-		s.printGrid()
+		s.PrintGrid()
 	} else {
 		fmt.Println(err)
 		panic(err)
@@ -47,11 +47,11 @@ func main() {
 
 	s.initCandidates()
 
-	s.printGrid()
+	s.PrintGrid()
 	// fmt.Println(s.Candidates)
 	s.Solve()
-	s.printGrid()
-	fmt.Println(s.getGridString())
+	s.PrintGrid()
+	fmt.Println(s.GetGridString())
 
 	if false {
 		fresult := s.findSinglesSimple()

@@ -111,6 +111,19 @@ func (s *Sudoku) validate() {
 	s.validateSolved()
 }
 
+func NewSudoku(grid string) (*Sudoku, error) {
+	s := Sudoku{}
+
+	err := s.initGrid(grid)
+	if err != nil {
+		return nil, err
+	}
+
+	s.initCandidates()
+
+	return &s, nil
+}
+
 func (s *Sudoku) initGrid(grids string) error {
 	if len(grids) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grids)
@@ -169,7 +182,7 @@ func (s *Sudoku) initCandidates() {
 	}
 }
 
-func (s Sudoku) printGrid() {
+func (s Sudoku) PrintGrid() {
 	fmt.Print("+-------------------+\n")
 	for i, cell := range s.Solved {
 		if (i+1)%9 == 1 {
@@ -190,7 +203,7 @@ func (s Sudoku) printGrid() {
 	fmt.Print("+-------------------+\n")
 }
 
-func (s Sudoku) getGridString() string {
+func (s Sudoku) GetGridString() string {
 	runes := make([]rune, 81)
 
 	for i, cell := range s.Solved {
