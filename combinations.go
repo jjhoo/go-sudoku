@@ -31,21 +31,20 @@ type combination struct {
 
 // Knuth, algorithm T
 func Combination(slice interface{}, koo int) combination {
-	tmp := combination{visitFlag: true, koo: koo, j: koo, k: koo}
+	c := combination{visitFlag: true, koo: koo, j: koo, k: koo}
 
 	xs := reflect.ValueOf(slice)
-	tmp.length = xs.Len()
+	c.length = xs.Len()
 
-	cjs := make([]int, koo+1)
+	c.cjs = make([]int, koo+1, koo+3)
 
 	for i := 0; i <= koo; i++ {
-		cjs[i] = i - 1
+		c.cjs[i] = i - 1
 	}
 
-	cjs = append(cjs, tmp.length, 0)
-	tmp.cjs = cjs
+	c.cjs = append(c.cjs, c.length, 0)
 
-	return tmp
+	return c
 }
 
 func (c *combination) visit() []int {

@@ -27,20 +27,23 @@ type permutation struct {
 }
 
 func Permutation(slice interface{}) permutation {
-	tmp := permutation{visitFlag: true}
+	p := permutation{visitFlag: true}
 
 	xs := reflect.ValueOf(slice)
-	tmp.length = xs.Len()
+	p.length = xs.Len()
 
-	ajs := make([]int, tmp.length+1)
+	ajs := make([]int, p.length+2)
+	ajs[0] = 0
 
-	for i := 0; i <= tmp.length; i++ {
-		ajs[i] = i
+	tmp := ajs[1:]
+
+	for i := 0; i <= p.length; i++ {
+		tmp[i] = i
 	}
-	ajs = append([]int{0}, ajs...)
-	tmp.ajs = ajs
 
-	return tmp
+	p.ajs = ajs
+
+	return p
 }
 
 func (p *permutation) visit() []int {

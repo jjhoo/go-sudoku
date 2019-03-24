@@ -190,9 +190,10 @@ func (s Sudoku) printGrid() {
 }
 
 func (s Sudoku) getGridString() string {
-	runes := []rune{}
-	for _, cell := range s.Solved {
-		runes = append(runes, rune('0') + int32(cell.Value))
+	runes := make([]rune, 0, 81)
+
+	for i, cell := range s.Solved {
+		runes[i] = '0' + rune(cell.Value)
 	}
 	return string(runes)
 }
