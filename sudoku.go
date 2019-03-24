@@ -82,7 +82,7 @@ func (s Sudoku) getCandidateBox(box int8) CellList {
 	})
 }
 
-func (s Sudoku) getCellNumbers(pos Pos) CellNumbers {
+func (s Sudoku) getCellNumbers(pos Pos) cellNumbers {
 	return getCellNumbers(pos, s.Candidates)
 }
 
@@ -344,7 +344,7 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 
 	combs := newCombination(len(unums), limit)
 	for {
-		matches := []CellNumbers{}
+		matches := []cellNumbers{}
 		others := []Pos{}
 
 		var idxs intList = combs.next()

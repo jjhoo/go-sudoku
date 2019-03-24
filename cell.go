@@ -26,7 +26,7 @@ type Cell struct {
 	Pos   Pos
 }
 
-type CellNumbers struct {
+type cellNumbers struct {
 	Pos     Pos
 	Numbers []int8
 }
@@ -35,12 +35,12 @@ type cellGetter func(x int8) CellList
 type cellFinder func(cells CellList) finderResult
 type cellPredicate func(Cell) bool
 
-func getCellNumbers(pos Pos, cands CellList) CellNumbers {
+func getCellNumbers(pos Pos, cands CellList) cellNumbers {
 	nums := cands.FilterMapInt8(
 		func(c Cell) int8 { return c.Value },
 		func(c Cell) bool { return c.Pos == pos })
 
-	return CellNumbers{Pos: pos, Numbers: nums}
+	return cellNumbers{Pos: pos, Numbers: nums}
 }
 
 func (c Cell) init(row int8, col int8, value int8) Cell {
