@@ -617,7 +617,7 @@ func (s *Sudoku) findYWings() finderResult {
 				continue
 			}
 
-			if w1.eqColumn(pivot, w2) || w1.eqRow(pivot, w2) || w2.eqBox(pivot, w2) {
+			if w1.eqColumn(pivot, w2) || w1.eqRow(pivot, w2) || w1.eqBox(pivot, w2) {
 				// fmt.Println("y-wing is a naked triple", w1, pivot, w2)
 				continue
 			}
