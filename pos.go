@@ -85,31 +85,16 @@ func (p Pos) init(row int8, col int8) Pos {
 	return p
 }
 
-func (p Pos) eqRow(others ...Pos) bool {
-	for _, other := range others {
-		if p.Row != other.Row {
-			return false
-		}
-	}
-	return true
+func (p Pos) eqRow(other Pos) bool {
+	return p.Row == other.Row
 }
 
-func (p Pos) eqColumn(others ...Pos) bool {
-	for _, other := range others {
-		if p.Column != other.Column {
-			return false
-		}
-	}
-	return true
+func (p Pos) eqColumn(other Pos) bool {
+	return p.Column == other.Column
 }
 
-func (p Pos) eqBox(others ...Pos) bool {
-	for _, other := range others {
-		if p.Box != other.Box {
-			return false
-		}
-	}
-	return true
+func (p Pos) eqBox(other Pos) bool {
+	return p.Box == other.Box
 }
 
 func (p Pos) sees(other Pos) bool {

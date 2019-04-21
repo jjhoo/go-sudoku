@@ -51,9 +51,13 @@ type numCount struct {
 }
 
 func numberCounts(nums int8List) numCountList {
-	nnums := dedupeInt8(nums)
+	nnums := make(int8List, len(nums))
+	copy(nnums, nums)
 
-	counts := nnums.MapNumCount(func(n int8) numCount {
+	sortInt8(nnums)
+	unums := dedupeInt8(nnums)
+
+	counts := unums.MapNumCount(func(n int8) numCount {
 		count := nums.Reduce(0, func(acc, nn int8) int8 {
 			if n == nn {
 				acc++

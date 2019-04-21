@@ -486,7 +486,7 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 
 	type pair struct {
 		getCells   func(int8) CellList
-		isSameLine func(Pos, ...Pos) bool
+		isSameLine func(Pos, Pos) bool
 	}
 
 	fpairs := []pair{
@@ -617,8 +617,8 @@ func (s *Sudoku) findYWings() finderResult {
 				continue
 			}
 
-			if w1.eqColumn(pivot, w2) || w1.eqRow(pivot, w2) || w1.eqBox(pivot, w2) {
-				// fmt.Println("y-wing is a naked triple", w1, pivot, w2)
+			if w1.sees(pivot) && w1.sees(w2) {
+				// fmt.Println("y-wing would be a naked triple", w1, pivot, w2)
 				continue
 			}
 
@@ -663,6 +663,124 @@ func (s *Sudoku) findYWings() finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
+func (s *Sudoku) findXWings() finderResult {
+	type pair struct {
+		linef     func(int8) CellList
+		eqLine    func(Pos, Pos) bool
+		parallelf func(Pos) CellList
+	}
+
+	var i, j int8
+	finder := func(fp pair) CellList {
+		found := CellList{}
+
+		for i = 1; i <= 8; i++ {
+			line1 := fp.linef(i)
+
+			if len(line1) <= 2 {
+				continue
+			}
+
+			line1Numbers := numbers(line1)
+			twos1 := numberCounts(line1Numbers).Filter(
+				func(nc numCount) bool {
+					return nc.count == 2
+				})
+
+			if len(twos1) < 1 {
+				continue
+			}
+
+			for j = i + 1; j <= 9; j++ {
+				line2 := fp.linef(j)
+				if len(line2) <= 2 {
+					continue
+				}
+
+				line2Numbers := numbers(line2)
+				twos2 := numberCounts(line2Numbers).Filter(
+					func(nc numCount) bool {
+						return nc.count == 2
+					})
+
+				if len(twos2) < 1 {
+					continue
+				}
+
+				for _, nc := range twos1 {
+					res := twos2.Filter(func(other numCount) bool {
+						return nc.num == other.num
+					})
+
+					if len(res) != 1 {
+						continue
+					}
+
+					// fmt.Printf("Check lines %d -- %d\n", i, j)
+					// fmt.Println(nc, res[0])
+
+					cells1 := line1.Filter(func(c Cell) bool {
+						return nc.num == c.Value
+					})
+
+					cells2 := line2.Filter(func(c Cell) bool {
+						return nc.num == c.Value
+					})
+
+					// fmt.Println(cells1, cells2)
+
+					if fp.eqLine(cells1[0].Pos, cells2[0].Pos) &&
+						fp.eqLine(cells1[1].Pos, cells2[1].Pos) {
+						found1 := fp.parallelf(cells1[0].Pos).Filter(func(c Cell) bool {
+							return nc.num == c.Value &&
+								cells1[0].Pos != c.Pos &&
+								cells2[0].Pos != c.Pos
+						})
+
+						found2 := fp.parallelf(cells1[1].Pos).Filter(func(c Cell) bool {
+							return nc.num == c.Value &&
+								cells1[1].Pos != c.Pos &&
+								cells2[1].Pos != c.Pos
+						})
+
+						if len(found1) > 0 {
+							found = append(found, found1...)
+						}
+
+						if len(found2) > 0 {
+							found = append(found, found2...)
+						}
+					}
+				}
+			}
+		}
+
+		return found
+	}
+
+	fpairs := []pair{
+		{s.getCandidateRow, Pos.eqColumn,
+			func(p Pos) CellList {
+				return s.getCandidateColumn(p.Column)
+			},
+		},
+		{s.getCandidateColumn, Pos.eqRow,
+			func(p Pos) CellList {
+				return s.getCandidateRow(p.Row)
+			},
+		},
+	}
+
+	found := CellList{}
+
+	for _, fp := range fpairs {
+		cells := finder(fp)
+		found = append(found, cells...)
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
 func printGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
@@ -689,6 +807,7 @@ func (s *Sudoku) Solve() bool {
 		s.findNakedGroups4,
 		s.findPointingPairs,
 		s.findBoxlineReduction,
+		s.findXWings,
 		s.findYWings,
 	}
 
