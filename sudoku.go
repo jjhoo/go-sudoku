@@ -13,7 +13,7 @@
 //  You should have received a copy of the GNU Affero General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-//go:generate fungen -package sudoku -types Box,Pos,Cell,numCount,int8,int
+//go:generate go run github.com/kulshekhar/fungen -package sudoku -types Box,Pos,Cell,numCount,int8,int
 
 package sudoku
 
