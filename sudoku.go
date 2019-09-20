@@ -13,7 +13,7 @@
 //  You should have received a copy of the GNU Affero General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-//go:generate go run github.com/kulshekhar/fungen -package sudoku -types Box,Pos,Cell,numCount,int8,int
+//go:generate go run github.com/kulshekhar/fungen -package sudoku -types Pos,Cell,numCount,int8,int
 
 package sudoku
 
@@ -51,9 +51,8 @@ func (s Sudoku) getColumn(col int8) CellList {
 }
 
 func (s Sudoku) getBox(box int8) CellList {
-	b := numToBox(box)
 	return s.Solved.Filter(func(c Cell) bool {
-		return c.Value != 0 && c.Pos.Box == b
+		return c.Value != 0 && c.Pos.Box == box
 	})
 }
 
@@ -76,9 +75,8 @@ func (s Sudoku) getCandidateColumn(col int8) CellList {
 }
 
 func (s Sudoku) getCandidateBox(box int8) CellList {
-	b := numToBox(box)
 	return s.Candidates.Filter(func(c Cell) bool {
-		return c.Pos.Box == b
+		return c.Pos.Box == box
 	})
 }
 

@@ -3,1037 +3,12 @@ package sudoku
 
 import "sync"
 
-// intList is the type for a list that holds members of type int
-type intList []int
-
-// MapPos is a method on intList that takes a function of type int -> Pos and applies it to every member of intList
-func (l intList) MapPos(f func(int) Pos) PosList {
-	l2 := make(PosList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapCell is a method on intList that takes a function of type int -> Cell and applies it to every member of intList
-func (l intList) MapCell(f func(int) Cell) CellList {
-	l2 := make(CellList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapNumCount is a method on intList that takes a function of type int -> numCount and applies it to every member of intList
-func (l intList) MapNumCount(f func(int) numCount) numCountList {
-	l2 := make(numCountList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapInt8 is a method on intList that takes a function of type int -> int8 and applies it to every member of intList
-func (l intList) MapInt8(f func(int) int8) int8List {
-	l2 := make(int8List, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// Map is a method on intList that takes a function of type int -> int and applies it to every member of intList
-func (l intList) Map(f func(int) int) intList {
-	l2 := make(intList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapBox is a method on intList that takes a function of type int -> Box and applies it to every member of intList
-func (l intList) MapBox(f func(int) Box) BoxList {
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// PMap is similar to Map except that it executes the function on each member in parallel.
-func (l intList) PMap(f func(int) int) intList {
-	wg := sync.WaitGroup{}
-	l2 := make(intList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapBox is similar to MapBox except that it executes the function on each member in parallel.
-func (l intList) PMapBox(f func(int) Box) BoxList {
-	wg := sync.WaitGroup{}
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapPos is similar to MapPos except that it executes the function on each member in parallel.
-func (l intList) PMapPos(f func(int) Pos) PosList {
-	wg := sync.WaitGroup{}
-	l2 := make(PosList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapCell is similar to MapCell except that it executes the function on each member in parallel.
-func (l intList) PMapCell(f func(int) Cell) CellList {
-	wg := sync.WaitGroup{}
-	l2 := make(CellList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapNumCount is similar to MapNumCount except that it executes the function on each member in parallel.
-func (l intList) PMapNumCount(f func(int) numCount) numCountList {
-	wg := sync.WaitGroup{}
-	l2 := make(numCountList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapInt8 is similar to MapInt8 except that it executes the function on each member in parallel.
-func (l intList) PMapInt8(f func(int) int8) int8List {
-	wg := sync.WaitGroup{}
-	l2 := make(int8List, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// Filter is a method on intList that takes a function of type int -> bool returns a list of type intList which contains all members from the original list for which the function returned true
-func (l intList) Filter(f func(int) bool) intList {
-	l2 := []int{}
-	for _, t := range l {
-		if f(t) {
-			l2 = append(l2, t)
-		}
-	}
-	return l2
-}
-
-// PFilter is similar to the Filter method except that the filter is applied to all the elements in parallel. The order of resulting elements cannot be guaranteed.
-func (l intList) PFilter(f func(int) bool) intList {
-	wg := sync.WaitGroup{}
-	mutex := sync.Mutex{}
-	l2 := []int{}
-	for _, t := range l {
-		wg.Add(1)
-		go func(t int) {
-			if f(t) {
-				mutex.Lock()
-				l2 = append(l2, t)
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// Reduce is a method on intList that takes a function of type (int, int) -> int and returns a int which is the result of applying the function to all members of the original list starting from the first member
-func (l intList) Reduce(t1 int, f func(int, int) int) int {
-	for _, t := range l {
-		t1 = f(t1, t)
-	}
-	return t1
-}
-
-// ReduceRight is a method on intList that takes a function of type (int, int) -> int and returns a int which is the result of applying the function to all members of the original list starting from the last member
-func (l intList) ReduceRight(t1 int, f func(int, int) int) int {
-	for i := len(l) - 1; i >= 0; i-- {
-		t := l[i]
-		t1 = f(t, t1)
-	}
-	return t1
-}
-
-// Take is a method on intList that takes an integer n and returns the first n elements of the original list. If the list contains fewer than n elements then the entire list is returned.
-func (l intList) Take(n int) intList {
-	if len(l) >= n {
-		return l[:n]
-	}
-	return l
-}
-
-// TakeWhile is a method on intList that takes a function of type int -> bool and returns a list of type intList which includes only the first members from the original list for which the function returned true
-func (l intList) TakeWhile(f func(int) bool) intList {
-	for i, t := range l {
-		if !f(t) {
-			return l[:i]
-		}
-	}
-	return l
-}
-
-// Drop is a method on intList that takes an integer n and returns all but the first n elements of the original list. If the list contains fewer than n elements then an empty list is returned.
-func (l intList) Drop(n int) intList {
-	if len(l) >= n {
-		return l[n:]
-	}
-	var l2 intList
-	return l2
-}
-
-// DropWhile is a method on intList that takes a function of type int -> bool and returns a list of type intList which excludes the first members from the original list for which the function returned true
-func (l intList) DropWhile(f func(int) bool) intList {
-	for i, t := range l {
-		if !f(t) {
-			return l[i:]
-		}
-	}
-	var l2 intList
-	return l2
-}
-
-// Each is a method on intList that takes a function of type int -> void and applies the function to each member of the list and then returns the original list.
-func (l intList) Each(f func(int)) intList {
-	for _, t := range l {
-		f(t)
-	}
-	return l
-}
-
-// EachI is a method on intList that takes a function of type (int, int) -> void and applies the function to each member of the list and then returns the original list. The int parameter to the function is the index of the element.
-func (l intList) EachI(f func(int, int)) intList {
-	for i, t := range l {
-		f(i, t)
-	}
-	return l
-}
-
-// All is a method on intList that returns true if all the members of the list satisfy a function or if the list is empty.
-func (l intList) All(f func(int) bool) bool {
-	for _, t := range l {
-		if !f(t) {
-			return false
-		}
-	}
-	return true
-}
-
-// Any is a method on intList that returns true if at least one member of the list satisfies a function. It returns false if the list is empty.
-func (l intList) Any(f func(int) bool) bool {
-	for _, t := range l {
-		if f(t) {
-			return true
-		}
-	}
-	return false
-}
-
-// FilterMapInt8 is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l intList) FilterMapInt8(fMap func(int) int8, fFilters ...func(int) bool) int8List {
-	l2 := int8List{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapBox is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l intList) FilterMapBox(fMap func(int) Box, fFilters ...func(int) bool) BoxList {
-	l2 := BoxList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapPos is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l intList) FilterMapPos(fMap func(int) Pos, fFilters ...func(int) bool) PosList {
-	l2 := PosList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapCell is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l intList) FilterMapCell(fMap func(int) Cell, fFilters ...func(int) bool) CellList {
-	l2 := CellList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapNumCount is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l intList) FilterMapNumCount(fMap func(int) numCount, fFilters ...func(int) bool) numCountList {
-	l2 := numCountList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// PFilterMapNumCount is similar to FilterMapNumCount except that it executes the method on each member in parallel.
-func (l intList) PFilterMapNumCount(fMap func(int) numCount, fFilters ...func(int) bool) numCountList {
-	l2 := numCountList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t int) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
-func (l intList) PFilterMapInt8(fMap func(int) int8, fFilters ...func(int) bool) int8List {
-	l2 := int8List{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t int) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapBox is similar to FilterMapBox except that it executes the method on each member in parallel.
-func (l intList) PFilterMapBox(fMap func(int) Box, fFilters ...func(int) bool) BoxList {
-	l2 := BoxList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t int) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapPos is similar to FilterMapPos except that it executes the method on each member in parallel.
-func (l intList) PFilterMapPos(fMap func(int) Pos, fFilters ...func(int) bool) PosList {
-	l2 := PosList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t int) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapCell is similar to FilterMapCell except that it executes the method on each member in parallel.
-func (l intList) PFilterMapCell(fMap func(int) Cell, fFilters ...func(int) bool) CellList {
-	l2 := CellList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t int) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// BoxList is the type for a list that holds members of type Box
-type BoxList []Box
-
-// MapCell is a method on BoxList that takes a function of type Box -> Cell and applies it to every member of BoxList
-func (l BoxList) MapCell(f func(Box) Cell) CellList {
-	l2 := make(CellList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapNumCount is a method on BoxList that takes a function of type Box -> numCount and applies it to every member of BoxList
-func (l BoxList) MapNumCount(f func(Box) numCount) numCountList {
-	l2 := make(numCountList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapInt8 is a method on BoxList that takes a function of type Box -> int8 and applies it to every member of BoxList
-func (l BoxList) MapInt8(f func(Box) int8) int8List {
-	l2 := make(int8List, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapInt is a method on BoxList that takes a function of type Box -> int and applies it to every member of BoxList
-func (l BoxList) MapInt(f func(Box) int) intList {
-	l2 := make(intList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// Map is a method on BoxList that takes a function of type Box -> Box and applies it to every member of BoxList
-func (l BoxList) Map(f func(Box) Box) BoxList {
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapPos is a method on BoxList that takes a function of type Box -> Pos and applies it to every member of BoxList
-func (l BoxList) MapPos(f func(Box) Pos) PosList {
-	l2 := make(PosList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// PMapInt8 is similar to MapInt8 except that it executes the function on each member in parallel.
-func (l BoxList) PMapInt8(f func(Box) int8) int8List {
-	wg := sync.WaitGroup{}
-	l2 := make(int8List, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Box) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapInt is similar to MapInt except that it executes the function on each member in parallel.
-func (l BoxList) PMapInt(f func(Box) int) intList {
-	wg := sync.WaitGroup{}
-	l2 := make(intList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Box) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMap is similar to Map except that it executes the function on each member in parallel.
-func (l BoxList) PMap(f func(Box) Box) BoxList {
-	wg := sync.WaitGroup{}
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Box) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapPos is similar to MapPos except that it executes the function on each member in parallel.
-func (l BoxList) PMapPos(f func(Box) Pos) PosList {
-	wg := sync.WaitGroup{}
-	l2 := make(PosList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Box) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapCell is similar to MapCell except that it executes the function on each member in parallel.
-func (l BoxList) PMapCell(f func(Box) Cell) CellList {
-	wg := sync.WaitGroup{}
-	l2 := make(CellList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Box) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapNumCount is similar to MapNumCount except that it executes the function on each member in parallel.
-func (l BoxList) PMapNumCount(f func(Box) numCount) numCountList {
-	wg := sync.WaitGroup{}
-	l2 := make(numCountList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Box) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// Filter is a method on BoxList that takes a function of type Box -> bool returns a list of type BoxList which contains all members from the original list for which the function returned true
-func (l BoxList) Filter(f func(Box) bool) BoxList {
-	l2 := []Box{}
-	for _, t := range l {
-		if f(t) {
-			l2 = append(l2, t)
-		}
-	}
-	return l2
-}
-
-// PFilter is similar to the Filter method except that the filter is applied to all the elements in parallel. The order of resulting elements cannot be guaranteed.
-func (l BoxList) PFilter(f func(Box) bool) BoxList {
-	wg := sync.WaitGroup{}
-	mutex := sync.Mutex{}
-	l2 := []Box{}
-	for _, t := range l {
-		wg.Add(1)
-		go func(t Box) {
-			if f(t) {
-				mutex.Lock()
-				l2 = append(l2, t)
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// Reduce is a method on BoxList that takes a function of type (Box, Box) -> Box and returns a Box which is the result of applying the function to all members of the original list starting from the first member
-func (l BoxList) Reduce(t1 Box, f func(Box, Box) Box) Box {
-	for _, t := range l {
-		t1 = f(t1, t)
-	}
-	return t1
-}
-
-// ReduceRight is a method on BoxList that takes a function of type (Box, Box) -> Box and returns a Box which is the result of applying the function to all members of the original list starting from the last member
-func (l BoxList) ReduceRight(t1 Box, f func(Box, Box) Box) Box {
-	for i := len(l) - 1; i >= 0; i-- {
-		t := l[i]
-		t1 = f(t, t1)
-	}
-	return t1
-}
-
-// Take is a method on BoxList that takes an integer n and returns the first n elements of the original list. If the list contains fewer than n elements then the entire list is returned.
-func (l BoxList) Take(n int) BoxList {
-	if len(l) >= n {
-		return l[:n]
-	}
-	return l
-}
-
-// TakeWhile is a method on BoxList that takes a function of type Box -> bool and returns a list of type BoxList which includes only the first members from the original list for which the function returned true
-func (l BoxList) TakeWhile(f func(Box) bool) BoxList {
-	for i, t := range l {
-		if !f(t) {
-			return l[:i]
-		}
-	}
-	return l
-}
-
-// Drop is a method on BoxList that takes an integer n and returns all but the first n elements of the original list. If the list contains fewer than n elements then an empty list is returned.
-func (l BoxList) Drop(n int) BoxList {
-	if len(l) >= n {
-		return l[n:]
-	}
-	var l2 BoxList
-	return l2
-}
-
-// DropWhile is a method on BoxList that takes a function of type Box -> bool and returns a list of type BoxList which excludes the first members from the original list for which the function returned true
-func (l BoxList) DropWhile(f func(Box) bool) BoxList {
-	for i, t := range l {
-		if !f(t) {
-			return l[i:]
-		}
-	}
-	var l2 BoxList
-	return l2
-}
-
-// Each is a method on BoxList that takes a function of type Box -> void and applies the function to each member of the list and then returns the original list.
-func (l BoxList) Each(f func(Box)) BoxList {
-	for _, t := range l {
-		f(t)
-	}
-	return l
-}
-
-// EachI is a method on BoxList that takes a function of type (int, Box) -> void and applies the function to each member of the list and then returns the original list. The int parameter to the function is the index of the element.
-func (l BoxList) EachI(f func(int, Box)) BoxList {
-	for i, t := range l {
-		f(i, t)
-	}
-	return l
-}
-
-// All is a method on BoxList that returns true if all the members of the list satisfy a function or if the list is empty.
-func (l BoxList) All(f func(Box) bool) bool {
-	for _, t := range l {
-		if !f(t) {
-			return false
-		}
-	}
-	return true
-}
-
-// Any is a method on BoxList that returns true if at least one member of the list satisfies a function. It returns false if the list is empty.
-func (l BoxList) Any(f func(Box) bool) bool {
-	for _, t := range l {
-		if f(t) {
-			return true
-		}
-	}
-	return false
-}
-
-// FilterMapNumCount is a method on BoxList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l BoxList) FilterMapNumCount(fMap func(Box) numCount, fFilters ...func(Box) bool) numCountList {
-	l2 := numCountList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapInt8 is a method on BoxList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l BoxList) FilterMapInt8(fMap func(Box) int8, fFilters ...func(Box) bool) int8List {
-	l2 := int8List{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapInt is a method on BoxList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l BoxList) FilterMapInt(fMap func(Box) int, fFilters ...func(Box) bool) intList {
-	l2 := intList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapPos is a method on BoxList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l BoxList) FilterMapPos(fMap func(Box) Pos, fFilters ...func(Box) bool) PosList {
-	l2 := PosList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapCell is a method on BoxList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l BoxList) FilterMapCell(fMap func(Box) Cell, fFilters ...func(Box) bool) CellList {
-	l2 := CellList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
-func (l BoxList) PFilterMapInt8(fMap func(Box) int8, fFilters ...func(Box) bool) int8List {
-	l2 := int8List{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Box) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
-func (l BoxList) PFilterMapInt(fMap func(Box) int, fFilters ...func(Box) bool) intList {
-	l2 := intList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Box) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapPos is similar to FilterMapPos except that it executes the method on each member in parallel.
-func (l BoxList) PFilterMapPos(fMap func(Box) Pos, fFilters ...func(Box) bool) PosList {
-	l2 := PosList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Box) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapCell is similar to FilterMapCell except that it executes the method on each member in parallel.
-func (l BoxList) PFilterMapCell(fMap func(Box) Cell, fFilters ...func(Box) bool) CellList {
-	l2 := CellList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Box) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PFilterMapNumCount is similar to FilterMapNumCount except that it executes the method on each member in parallel.
-func (l BoxList) PFilterMapNumCount(fMap func(Box) numCount, fFilters ...func(Box) bool) numCountList {
-	l2 := numCountList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Box) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
 // PosList is the type for a list that holds members of type Pos
 type PosList []Pos
-
-// MapNumCount is a method on PosList that takes a function of type Pos -> numCount and applies it to every member of PosList
-func (l PosList) MapNumCount(f func(Pos) numCount) numCountList {
-	l2 := make(numCountList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapInt8 is a method on PosList that takes a function of type Pos -> int8 and applies it to every member of PosList
-func (l PosList) MapInt8(f func(Pos) int8) int8List {
-	l2 := make(int8List, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
 
 // MapInt is a method on PosList that takes a function of type Pos -> int and applies it to every member of PosList
 func (l PosList) MapInt(f func(Pos) int) intList {
 	l2 := make(intList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapBox is a method on PosList that takes a function of type Pos -> Box and applies it to every member of PosList
-func (l PosList) MapBox(f func(Pos) Box) BoxList {
-	l2 := make(BoxList, len(l))
 	for i, t := range l {
 		l2[i] = f(t)
 	}
@@ -1058,33 +33,21 @@ func (l PosList) MapCell(f func(Pos) Cell) CellList {
 	return l2
 }
 
-// PMapBox is similar to MapBox except that it executes the function on each member in parallel.
-func (l PosList) PMapBox(f func(Pos) Box) BoxList {
-	wg := sync.WaitGroup{}
-	l2 := make(BoxList, len(l))
+// MapNumCount is a method on PosList that takes a function of type Pos -> numCount and applies it to every member of PosList
+func (l PosList) MapNumCount(f func(Pos) numCount) numCountList {
+	l2 := make(numCountList, len(l))
 	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Pos) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
+		l2[i] = f(t)
 	}
-	wg.Wait()
 	return l2
 }
 
-// PMap is similar to Map except that it executes the function on each member in parallel.
-func (l PosList) PMap(f func(Pos) Pos) PosList {
-	wg := sync.WaitGroup{}
-	l2 := make(PosList, len(l))
+// MapInt8 is a method on PosList that takes a function of type Pos -> int8 and applies it to every member of PosList
+func (l PosList) MapInt8(f func(Pos) int8) int8List {
+	l2 := make(int8List, len(l))
 	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Pos) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
+		l2[i] = f(t)
 	}
-	wg.Wait()
 	return l2
 }
 
@@ -1137,6 +100,21 @@ func (l PosList) PMapInt8(f func(Pos) int8) int8List {
 func (l PosList) PMapInt(f func(Pos) int) intList {
 	wg := sync.WaitGroup{}
 	l2 := make(intList, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t Pos) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PMap is similar to Map except that it executes the function on each member in parallel.
+func (l PosList) PMap(f func(Pos) Pos) PosList {
+	wg := sync.WaitGroup{}
+	l2 := make(PosList, len(l))
 	for i, t := range l {
 		wg.Add(1)
 		go func(i int, t Pos) {
@@ -1270,42 +248,6 @@ func (l PosList) Any(f func(Pos) bool) bool {
 	return false
 }
 
-// FilterMapInt is a method on PosList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l PosList) FilterMapInt(fMap func(Pos) int, fFilters ...func(Pos) bool) intList {
-	l2 := intList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// FilterMapBox is a method on PosList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l PosList) FilterMapBox(fMap func(Pos) Box, fFilters ...func(Pos) bool) BoxList {
-	l2 := BoxList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
 // FilterMapCell is a method on PosList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
 func (l PosList) FilterMapCell(fMap func(Pos) Cell, fFilters ...func(Pos) bool) CellList {
 	l2 := CellList{}
@@ -1345,6 +287,24 @@ func (l PosList) FilterMapNumCount(fMap func(Pos) numCount, fFilters ...func(Pos
 // FilterMapInt8 is a method on PosList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
 func (l PosList) FilterMapInt8(fMap func(Pos) int8, fFilters ...func(Pos) bool) int8List {
 	l2 := int8List{}
+	for _, t := range l {
+		pass := true
+		for _, f := range fFilters {
+			if !f(t) {
+				pass = false
+				break
+			}
+		}
+		if pass {
+			l2 = append(l2, fMap(t))
+		}
+	}
+	return l2
+}
+
+// FilterMapInt is a method on PosList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l PosList) FilterMapInt(fMap func(Pos) int, fFilters ...func(Pos) bool) intList {
+	l2 := intList{}
 	for _, t := range l {
 		pass := true
 		for _, f := range fFilters {
@@ -1472,54 +432,8 @@ func (l PosList) PFilterMapInt(fMap func(Pos) int, fFilters ...func(Pos) bool) i
 	return l2
 }
 
-// PFilterMapBox is similar to FilterMapBox except that it executes the method on each member in parallel.
-func (l PosList) PFilterMapBox(fMap func(Pos) Box, fFilters ...func(Pos) bool) BoxList {
-	l2 := BoxList{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Pos) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
 // CellList is the type for a list that holds members of type Cell
 type CellList []Cell
-
-// MapInt is a method on CellList that takes a function of type Cell -> int and applies it to every member of CellList
-func (l CellList) MapInt(f func(Cell) int) intList {
-	l2 := make(intList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapBox is a method on CellList that takes a function of type Cell -> Box and applies it to every member of CellList
-func (l CellList) MapBox(f func(Cell) Box) BoxList {
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
 
 // MapPos is a method on CellList that takes a function of type Cell -> Pos and applies it to every member of CellList
 func (l CellList) MapPos(f func(Cell) Pos) PosList {
@@ -1557,6 +471,15 @@ func (l CellList) MapInt8(f func(Cell) int8) int8List {
 	return l2
 }
 
+// MapInt is a method on CellList that takes a function of type Cell -> int and applies it to every member of CellList
+func (l CellList) MapInt(f func(Cell) int) intList {
+	l2 := make(intList, len(l))
+	for i, t := range l {
+		l2[i] = f(t)
+	}
+	return l2
+}
+
 // PMapInt8 is similar to MapInt8 except that it executes the function on each member in parallel.
 func (l CellList) PMapInt8(f func(Cell) int8) int8List {
 	wg := sync.WaitGroup{}
@@ -1576,21 +499,6 @@ func (l CellList) PMapInt8(f func(Cell) int8) int8List {
 func (l CellList) PMapInt(f func(Cell) int) intList {
 	wg := sync.WaitGroup{}
 	l2 := make(intList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t Cell) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
-	return l2
-}
-
-// PMapBox is similar to MapBox except that it executes the function on each member in parallel.
-func (l CellList) PMapBox(f func(Cell) Box) BoxList {
-	wg := sync.WaitGroup{}
-	l2 := make(BoxList, len(l))
 	for i, t := range l {
 		wg.Add(1)
 		go func(i int, t Cell) {
@@ -1841,27 +749,9 @@ func (l CellList) FilterMapInt(fMap func(Cell) int, fFilters ...func(Cell) bool)
 	return l2
 }
 
-// FilterMapBox is a method on CellList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l CellList) FilterMapBox(fMap func(Cell) Box, fFilters ...func(Cell) bool) BoxList {
-	l2 := BoxList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
-func (l CellList) PFilterMapInt(fMap func(Cell) int, fFilters ...func(Cell) bool) intList {
-	l2 := intList{}
+// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
+func (l CellList) PFilterMapInt8(fMap func(Cell) int8, fFilters ...func(Cell) bool) int8List {
+	l2 := int8List{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
@@ -1887,9 +777,9 @@ func (l CellList) PFilterMapInt(fMap func(Cell) int, fFilters ...func(Cell) bool
 	return l2
 }
 
-// PFilterMapBox is similar to FilterMapBox except that it executes the method on each member in parallel.
-func (l CellList) PFilterMapBox(fMap func(Cell) Box, fFilters ...func(Cell) bool) BoxList {
-	l2 := BoxList{}
+// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
+func (l CellList) PFilterMapInt(fMap func(Cell) int, fFilters ...func(Cell) bool) intList {
+	l2 := intList{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
@@ -1971,34 +861,6 @@ func (l CellList) PFilterMapNumCount(fMap func(Cell) numCount, fFilters ...func(
 	return l2
 }
 
-// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
-func (l CellList) PFilterMapInt8(fMap func(Cell) int8, fFilters ...func(Cell) bool) int8List {
-	l2 := int8List{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t Cell) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
 // numCountList is the type for a list that holds members of type numCount
 type numCountList []numCount
 
@@ -2044,30 +906,6 @@ func (l numCountList) MapInt(f func(numCount) int) intList {
 	for i, t := range l {
 		l2[i] = f(t)
 	}
-	return l2
-}
-
-// MapBox is a method on numCountList that takes a function of type numCount -> Box and applies it to every member of numCountList
-func (l numCountList) MapBox(f func(numCount) Box) BoxList {
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// PMapBox is similar to MapBox except that it executes the function on each member in parallel.
-func (l numCountList) PMapBox(f func(numCount) Box) BoxList {
-	wg := sync.WaitGroup{}
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t numCount) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
-	}
-	wg.Wait()
 	return l2
 }
 
@@ -2268,6 +1106,24 @@ func (l numCountList) Any(f func(numCount) bool) bool {
 	return false
 }
 
+// FilterMapCell is a method on numCountList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l numCountList) FilterMapCell(fMap func(numCount) Cell, fFilters ...func(numCount) bool) CellList {
+	l2 := CellList{}
+	for _, t := range l {
+		pass := true
+		for _, f := range fFilters {
+			if !f(t) {
+				pass = false
+				break
+			}
+		}
+		if pass {
+			l2 = append(l2, fMap(t))
+		}
+	}
+	return l2
+}
+
 // FilterMapInt8 is a method on numCountList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
 func (l numCountList) FilterMapInt8(fMap func(numCount) int8, fFilters ...func(numCount) bool) int8List {
 	l2 := int8List{}
@@ -2304,24 +1160,6 @@ func (l numCountList) FilterMapInt(fMap func(numCount) int, fFilters ...func(num
 	return l2
 }
 
-// FilterMapBox is a method on numCountList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l numCountList) FilterMapBox(fMap func(numCount) Box, fFilters ...func(numCount) bool) BoxList {
-	l2 := BoxList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
 // FilterMapPos is a method on numCountList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
 func (l numCountList) FilterMapPos(fMap func(numCount) Pos, fFilters ...func(numCount) bool) PosList {
 	l2 := PosList{}
@@ -2340,27 +1178,9 @@ func (l numCountList) FilterMapPos(fMap func(numCount) Pos, fFilters ...func(num
 	return l2
 }
 
-// FilterMapCell is a method on numCountList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l numCountList) FilterMapCell(fMap func(numCount) Cell, fFilters ...func(numCount) bool) CellList {
-	l2 := CellList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
-func (l numCountList) PFilterMapInt(fMap func(numCount) int, fFilters ...func(numCount) bool) intList {
-	l2 := intList{}
+// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
+func (l numCountList) PFilterMapInt8(fMap func(numCount) int8, fFilters ...func(numCount) bool) int8List {
+	l2 := int8List{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
@@ -2386,9 +1206,9 @@ func (l numCountList) PFilterMapInt(fMap func(numCount) int, fFilters ...func(nu
 	return l2
 }
 
-// PFilterMapBox is similar to FilterMapBox except that it executes the method on each member in parallel.
-func (l numCountList) PFilterMapBox(fMap func(numCount) Box, fFilters ...func(numCount) bool) BoxList {
-	l2 := BoxList{}
+// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
+func (l numCountList) PFilterMapInt(fMap func(numCount) int, fFilters ...func(numCount) bool) intList {
+	l2 := intList{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
@@ -2470,63 +1290,8 @@ func (l numCountList) PFilterMapCell(fMap func(numCount) Cell, fFilters ...func(
 	return l2
 }
 
-// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
-func (l numCountList) PFilterMapInt8(fMap func(numCount) int8, fFilters ...func(numCount) bool) int8List {
-	l2 := int8List{}
-	mutex := sync.Mutex{}
-	wg := sync.WaitGroup{}
-	wg.Add(len(l))
-
-	for _, t := range l {
-		go func(t numCount) {
-			pass := true
-			for _, f := range fFilters {
-				if !f(t) {
-					pass = false
-					break
-				}
-			}
-			if pass {
-				mutex.Lock()
-				l2 = append(l2, fMap(t))
-				mutex.Unlock()
-			}
-			wg.Done()
-		}(t)
-	}
-	wg.Wait()
-	return l2
-}
-
 // int8List is the type for a list that holds members of type int8
 type int8List []int8
-
-// MapBox is a method on int8List that takes a function of type int8 -> Box and applies it to every member of int8List
-func (l int8List) MapBox(f func(int8) Box) BoxList {
-	l2 := make(BoxList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapPos is a method on int8List that takes a function of type int8 -> Pos and applies it to every member of int8List
-func (l int8List) MapPos(f func(int8) Pos) PosList {
-	l2 := make(PosList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
-
-// MapCell is a method on int8List that takes a function of type int8 -> Cell and applies it to every member of int8List
-func (l int8List) MapCell(f func(int8) Cell) CellList {
-	l2 := make(CellList, len(l))
-	for i, t := range l {
-		l2[i] = f(t)
-	}
-	return l2
-}
 
 // MapNumCount is a method on int8List that takes a function of type int8 -> numCount and applies it to every member of int8List
 func (l int8List) MapNumCount(f func(int8) numCount) numCountList {
@@ -2555,33 +1320,21 @@ func (l int8List) MapInt(f func(int8) int) intList {
 	return l2
 }
 
-// PMapBox is similar to MapBox except that it executes the function on each member in parallel.
-func (l int8List) PMapBox(f func(int8) Box) BoxList {
-	wg := sync.WaitGroup{}
-	l2 := make(BoxList, len(l))
+// MapPos is a method on int8List that takes a function of type int8 -> Pos and applies it to every member of int8List
+func (l int8List) MapPos(f func(int8) Pos) PosList {
+	l2 := make(PosList, len(l))
 	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int8) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
+		l2[i] = f(t)
 	}
-	wg.Wait()
 	return l2
 }
 
-// PMapPos is similar to MapPos except that it executes the function on each member in parallel.
-func (l int8List) PMapPos(f func(int8) Pos) PosList {
-	wg := sync.WaitGroup{}
-	l2 := make(PosList, len(l))
+// MapCell is a method on int8List that takes a function of type int8 -> Cell and applies it to every member of int8List
+func (l int8List) MapCell(f func(int8) Cell) CellList {
+	l2 := make(CellList, len(l))
 	for i, t := range l {
-		wg.Add(1)
-		go func(i int, t int8) {
-			l2[i] = f(t)
-			wg.Done()
-		}(i, t)
+		l2[i] = f(t)
 	}
-	wg.Wait()
 	return l2
 }
 
@@ -2634,6 +1387,21 @@ func (l int8List) PMap(f func(int8) int8) int8List {
 func (l int8List) PMapInt(f func(int8) int) intList {
 	wg := sync.WaitGroup{}
 	l2 := make(intList, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t int8) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PMapPos is similar to MapPos except that it executes the function on each member in parallel.
+func (l int8List) PMapPos(f func(int8) Pos) PosList {
+	wg := sync.WaitGroup{}
+	l2 := make(PosList, len(l))
 	for i, t := range l {
 		wg.Add(1)
 		go func(i int, t int8) {
@@ -2767,9 +1535,9 @@ func (l int8List) Any(f func(int8) bool) bool {
 	return false
 }
 
-// FilterMapBox is a method on int8List that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l int8List) FilterMapBox(fMap func(int8) Box, fFilters ...func(int8) bool) BoxList {
-	l2 := BoxList{}
+// FilterMapInt is a method on int8List that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l int8List) FilterMapInt(fMap func(int8) int, fFilters ...func(int8) bool) intList {
+	l2 := intList{}
 	for _, t := range l {
 		pass := true
 		for _, f := range fFilters {
@@ -2839,27 +1607,9 @@ func (l int8List) FilterMapNumCount(fMap func(int8) numCount, fFilters ...func(i
 	return l2
 }
 
-// FilterMapInt is a method on int8List that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
-func (l int8List) FilterMapInt(fMap func(int8) int, fFilters ...func(int8) bool) intList {
-	l2 := intList{}
-	for _, t := range l {
-		pass := true
-		for _, f := range fFilters {
-			if !f(t) {
-				pass = false
-				break
-			}
-		}
-		if pass {
-			l2 = append(l2, fMap(t))
-		}
-	}
-	return l2
-}
-
-// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
-func (l int8List) PFilterMapInt(fMap func(int8) int, fFilters ...func(int8) bool) intList {
-	l2 := intList{}
+// PFilterMapCell is similar to FilterMapCell except that it executes the method on each member in parallel.
+func (l int8List) PFilterMapCell(fMap func(int8) Cell, fFilters ...func(int8) bool) CellList {
+	l2 := CellList{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
@@ -2885,9 +1635,37 @@ func (l int8List) PFilterMapInt(fMap func(int8) int, fFilters ...func(int8) bool
 	return l2
 }
 
-// PFilterMapBox is similar to FilterMapBox except that it executes the method on each member in parallel.
-func (l int8List) PFilterMapBox(fMap func(int8) Box, fFilters ...func(int8) bool) BoxList {
-	l2 := BoxList{}
+// PFilterMapNumCount is similar to FilterMapNumCount except that it executes the method on each member in parallel.
+func (l int8List) PFilterMapNumCount(fMap func(int8) numCount, fFilters ...func(int8) bool) numCountList {
+	l2 := numCountList{}
+	mutex := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	wg.Add(len(l))
+
+	for _, t := range l {
+		go func(t int8) {
+			pass := true
+			for _, f := range fFilters {
+				if !f(t) {
+					pass = false
+					break
+				}
+			}
+			if pass {
+				mutex.Lock()
+				l2 = append(l2, fMap(t))
+				mutex.Unlock()
+			}
+			wg.Done()
+		}(t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PFilterMapInt is similar to FilterMapInt except that it executes the method on each member in parallel.
+func (l int8List) PFilterMapInt(fMap func(int8) int, fFilters ...func(int8) bool) intList {
+	l2 := intList{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
@@ -2941,15 +1719,360 @@ func (l int8List) PFilterMapPos(fMap func(int8) Pos, fFilters ...func(int8) bool
 	return l2
 }
 
+// intList is the type for a list that holds members of type int
+type intList []int
+
+// MapPos is a method on intList that takes a function of type int -> Pos and applies it to every member of intList
+func (l intList) MapPos(f func(int) Pos) PosList {
+	l2 := make(PosList, len(l))
+	for i, t := range l {
+		l2[i] = f(t)
+	}
+	return l2
+}
+
+// MapCell is a method on intList that takes a function of type int -> Cell and applies it to every member of intList
+func (l intList) MapCell(f func(int) Cell) CellList {
+	l2 := make(CellList, len(l))
+	for i, t := range l {
+		l2[i] = f(t)
+	}
+	return l2
+}
+
+// MapNumCount is a method on intList that takes a function of type int -> numCount and applies it to every member of intList
+func (l intList) MapNumCount(f func(int) numCount) numCountList {
+	l2 := make(numCountList, len(l))
+	for i, t := range l {
+		l2[i] = f(t)
+	}
+	return l2
+}
+
+// MapInt8 is a method on intList that takes a function of type int -> int8 and applies it to every member of intList
+func (l intList) MapInt8(f func(int) int8) int8List {
+	l2 := make(int8List, len(l))
+	for i, t := range l {
+		l2[i] = f(t)
+	}
+	return l2
+}
+
+// Map is a method on intList that takes a function of type int -> int and applies it to every member of intList
+func (l intList) Map(f func(int) int) intList {
+	l2 := make(intList, len(l))
+	for i, t := range l {
+		l2[i] = f(t)
+	}
+	return l2
+}
+
+// PMap is similar to Map except that it executes the function on each member in parallel.
+func (l intList) PMap(f func(int) int) intList {
+	wg := sync.WaitGroup{}
+	l2 := make(intList, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t int) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PMapPos is similar to MapPos except that it executes the function on each member in parallel.
+func (l intList) PMapPos(f func(int) Pos) PosList {
+	wg := sync.WaitGroup{}
+	l2 := make(PosList, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t int) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PMapCell is similar to MapCell except that it executes the function on each member in parallel.
+func (l intList) PMapCell(f func(int) Cell) CellList {
+	wg := sync.WaitGroup{}
+	l2 := make(CellList, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t int) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PMapNumCount is similar to MapNumCount except that it executes the function on each member in parallel.
+func (l intList) PMapNumCount(f func(int) numCount) numCountList {
+	wg := sync.WaitGroup{}
+	l2 := make(numCountList, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t int) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PMapInt8 is similar to MapInt8 except that it executes the function on each member in parallel.
+func (l intList) PMapInt8(f func(int) int8) int8List {
+	wg := sync.WaitGroup{}
+	l2 := make(int8List, len(l))
+	for i, t := range l {
+		wg.Add(1)
+		go func(i int, t int) {
+			l2[i] = f(t)
+			wg.Done()
+		}(i, t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// Filter is a method on intList that takes a function of type int -> bool returns a list of type intList which contains all members from the original list for which the function returned true
+func (l intList) Filter(f func(int) bool) intList {
+	l2 := []int{}
+	for _, t := range l {
+		if f(t) {
+			l2 = append(l2, t)
+		}
+	}
+	return l2
+}
+
+// PFilter is similar to the Filter method except that the filter is applied to all the elements in parallel. The order of resulting elements cannot be guaranteed.
+func (l intList) PFilter(f func(int) bool) intList {
+	wg := sync.WaitGroup{}
+	mutex := sync.Mutex{}
+	l2 := []int{}
+	for _, t := range l {
+		wg.Add(1)
+		go func(t int) {
+			if f(t) {
+				mutex.Lock()
+				l2 = append(l2, t)
+				mutex.Unlock()
+			}
+			wg.Done()
+		}(t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// Reduce is a method on intList that takes a function of type (int, int) -> int and returns a int which is the result of applying the function to all members of the original list starting from the first member
+func (l intList) Reduce(t1 int, f func(int, int) int) int {
+	for _, t := range l {
+		t1 = f(t1, t)
+	}
+	return t1
+}
+
+// ReduceRight is a method on intList that takes a function of type (int, int) -> int and returns a int which is the result of applying the function to all members of the original list starting from the last member
+func (l intList) ReduceRight(t1 int, f func(int, int) int) int {
+	for i := len(l) - 1; i >= 0; i-- {
+		t := l[i]
+		t1 = f(t, t1)
+	}
+	return t1
+}
+
+// Take is a method on intList that takes an integer n and returns the first n elements of the original list. If the list contains fewer than n elements then the entire list is returned.
+func (l intList) Take(n int) intList {
+	if len(l) >= n {
+		return l[:n]
+	}
+	return l
+}
+
+// TakeWhile is a method on intList that takes a function of type int -> bool and returns a list of type intList which includes only the first members from the original list for which the function returned true
+func (l intList) TakeWhile(f func(int) bool) intList {
+	for i, t := range l {
+		if !f(t) {
+			return l[:i]
+		}
+	}
+	return l
+}
+
+// Drop is a method on intList that takes an integer n and returns all but the first n elements of the original list. If the list contains fewer than n elements then an empty list is returned.
+func (l intList) Drop(n int) intList {
+	if len(l) >= n {
+		return l[n:]
+	}
+	var l2 intList
+	return l2
+}
+
+// DropWhile is a method on intList that takes a function of type int -> bool and returns a list of type intList which excludes the first members from the original list for which the function returned true
+func (l intList) DropWhile(f func(int) bool) intList {
+	for i, t := range l {
+		if !f(t) {
+			return l[i:]
+		}
+	}
+	var l2 intList
+	return l2
+}
+
+// Each is a method on intList that takes a function of type int -> void and applies the function to each member of the list and then returns the original list.
+func (l intList) Each(f func(int)) intList {
+	for _, t := range l {
+		f(t)
+	}
+	return l
+}
+
+// EachI is a method on intList that takes a function of type (int, int) -> void and applies the function to each member of the list and then returns the original list. The int parameter to the function is the index of the element.
+func (l intList) EachI(f func(int, int)) intList {
+	for i, t := range l {
+		f(i, t)
+	}
+	return l
+}
+
+// All is a method on intList that returns true if all the members of the list satisfy a function or if the list is empty.
+func (l intList) All(f func(int) bool) bool {
+	for _, t := range l {
+		if !f(t) {
+			return false
+		}
+	}
+	return true
+}
+
+// Any is a method on intList that returns true if at least one member of the list satisfies a function. It returns false if the list is empty.
+func (l intList) Any(f func(int) bool) bool {
+	for _, t := range l {
+		if f(t) {
+			return true
+		}
+	}
+	return false
+}
+
+// FilterMapPos is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l intList) FilterMapPos(fMap func(int) Pos, fFilters ...func(int) bool) PosList {
+	l2 := PosList{}
+	for _, t := range l {
+		pass := true
+		for _, f := range fFilters {
+			if !f(t) {
+				pass = false
+				break
+			}
+		}
+		if pass {
+			l2 = append(l2, fMap(t))
+		}
+	}
+	return l2
+}
+
+// FilterMapCell is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l intList) FilterMapCell(fMap func(int) Cell, fFilters ...func(int) bool) CellList {
+	l2 := CellList{}
+	for _, t := range l {
+		pass := true
+		for _, f := range fFilters {
+			if !f(t) {
+				pass = false
+				break
+			}
+		}
+		if pass {
+			l2 = append(l2, fMap(t))
+		}
+	}
+	return l2
+}
+
+// FilterMapNumCount is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l intList) FilterMapNumCount(fMap func(int) numCount, fFilters ...func(int) bool) numCountList {
+	l2 := numCountList{}
+	for _, t := range l {
+		pass := true
+		for _, f := range fFilters {
+			if !f(t) {
+				pass = false
+				break
+			}
+		}
+		if pass {
+			l2 = append(l2, fMap(t))
+		}
+	}
+	return l2
+}
+
+// FilterMapInt8 is a method on intList that applies the filter(s) and map to the list members in a single loop and returns the resulting list.
+func (l intList) FilterMapInt8(fMap func(int) int8, fFilters ...func(int) bool) int8List {
+	l2 := int8List{}
+	for _, t := range l {
+		pass := true
+		for _, f := range fFilters {
+			if !f(t) {
+				pass = false
+				break
+			}
+		}
+		if pass {
+			l2 = append(l2, fMap(t))
+		}
+	}
+	return l2
+}
+
+// PFilterMapPos is similar to FilterMapPos except that it executes the method on each member in parallel.
+func (l intList) PFilterMapPos(fMap func(int) Pos, fFilters ...func(int) bool) PosList {
+	l2 := PosList{}
+	mutex := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	wg.Add(len(l))
+
+	for _, t := range l {
+		go func(t int) {
+			pass := true
+			for _, f := range fFilters {
+				if !f(t) {
+					pass = false
+					break
+				}
+			}
+			if pass {
+				mutex.Lock()
+				l2 = append(l2, fMap(t))
+				mutex.Unlock()
+			}
+			wg.Done()
+		}(t)
+	}
+	wg.Wait()
+	return l2
+}
+
 // PFilterMapCell is similar to FilterMapCell except that it executes the method on each member in parallel.
-func (l int8List) PFilterMapCell(fMap func(int8) Cell, fFilters ...func(int8) bool) CellList {
+func (l intList) PFilterMapCell(fMap func(int) Cell, fFilters ...func(int) bool) CellList {
 	l2 := CellList{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
 
 	for _, t := range l {
-		go func(t int8) {
+		go func(t int) {
 			pass := true
 			for _, f := range fFilters {
 				if !f(t) {
@@ -2970,14 +2093,42 @@ func (l int8List) PFilterMapCell(fMap func(int8) Cell, fFilters ...func(int8) bo
 }
 
 // PFilterMapNumCount is similar to FilterMapNumCount except that it executes the method on each member in parallel.
-func (l int8List) PFilterMapNumCount(fMap func(int8) numCount, fFilters ...func(int8) bool) numCountList {
+func (l intList) PFilterMapNumCount(fMap func(int) numCount, fFilters ...func(int) bool) numCountList {
 	l2 := numCountList{}
 	mutex := sync.Mutex{}
 	wg := sync.WaitGroup{}
 	wg.Add(len(l))
 
 	for _, t := range l {
-		go func(t int8) {
+		go func(t int) {
+			pass := true
+			for _, f := range fFilters {
+				if !f(t) {
+					pass = false
+					break
+				}
+			}
+			if pass {
+				mutex.Lock()
+				l2 = append(l2, fMap(t))
+				mutex.Unlock()
+			}
+			wg.Done()
+		}(t)
+	}
+	wg.Wait()
+	return l2
+}
+
+// PFilterMapInt8 is similar to FilterMapInt8 except that it executes the method on each member in parallel.
+func (l intList) PFilterMapInt8(fMap func(int) int8, fFilters ...func(int) bool) int8List {
+	l2 := int8List{}
+	mutex := sync.Mutex{}
+	wg := sync.WaitGroup{}
+	wg.Add(len(l))
+
+	for _, t := range l {
+		go func(t int) {
 			pass := true
 			for _, f := range fFilters {
 				if !f(t) {
