@@ -781,7 +781,7 @@ func (s *Sudoku) findXWings() finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
-func printGrid(grid string) error {
+func PrintGrid(grid string) error {
 	if len(grid) != 81 {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
 	}

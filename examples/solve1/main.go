@@ -14,10 +14,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-package sudoku
+package main
 
 import (
 	"fmt"
+
+	"github.com/jjhoo/go-sudoku"
 )
 
 func main() {
@@ -26,14 +28,12 @@ func main() {
 	// grid1 := "000921003009000060000000500080403006007000800500700040003000000020000700800195000"
 	grid1 := "000040700500780020070002006810007900460000051009600078900800010080064009002050000"
 
-	err := printGrid(grid1)
+	err := sudoku.PrintGrid(grid1)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 
-	var s Sudoku
-
-	err = s.initGrid(grid1)
+	s, err := sudoku.NewSudoku(grid1)
 	if err == nil {
 		s.PrintGrid()
 	} else {
@@ -41,70 +41,9 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(s.getRow(1))
-	fmt.Println(s.getColumn(1))
-	fmt.Println(s.getBox(1))
-
-	s.initCandidates()
-
 	s.PrintGrid()
 	// fmt.Println(s.Candidates)
 	s.Solve()
 	s.PrintGrid()
 	fmt.Println(s.GetGridString())
-
-	if false {
-		fresult := s.findSinglesSimple()
-		if len(fresult.Solved) > 0 {
-			s.updateSolved(fresult.Solved)
-			s.updateCandidates(fresult.Solved)
-		}
-		fmt.Println("Found", fresult.Solved)
-		// fmt.Println(s.Candidates)
-
-		fresult = s.findSingles()
-		if len(fresult.Solved) > 0 {
-			s.updateSolved(fresult.Solved)
-			s.updateCandidates(fresult.Solved)
-		}
-		fmt.Println("Found", fresult.Solved)
-	}
-
-	if false {
-		test := s.getCandidateRow(1)
-		// poss := ucpos(test)
-		nums := uniqueNumbers(test)
-		visitf := func(idxs []int) {
-			out := make([]int8, len(idxs))
-
-			for i, n := range idxs {
-				out[i] = nums[n]
-			}
-			fmt.Println("visit", out)
-		}
-
-		foo := newPermutation(len(nums))
-		fmt.Println("permutation test", nums, foo)
-
-		for {
-			idxs := foo.next()
-
-			if idxs == nil {
-				break
-			}
-			visitf(idxs)
-		}
-
-		bar := newCombination(len(nums), 2)
-		fmt.Println("combination test", nums, bar)
-
-		for {
-			idxs := bar.next()
-
-			if idxs == nil {
-				break
-			}
-			visitf(idxs)
-		}
-	}
 }

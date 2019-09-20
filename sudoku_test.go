@@ -104,7 +104,7 @@ func TestGridString(t *testing.T) {
 func TestPrintGrid1(t *testing.T) {
 	grid := "000921003009000060000000500080403006007000800500700040003000000020000700800195000"
 
-	err := printGrid(grid)
+	err := PrintGrid(grid)
 	if err != nil {
 		t.Error(err)
 	}
@@ -114,7 +114,7 @@ func TestPrintGrid2(t *testing.T) {
 	// Short grid length
 	grid := "00092100300900006000000050008040300600700080050070004000300000002000070080019500"
 
-	err := printGrid(grid)
+	err := PrintGrid(grid)
 	if err == nil {
 		t.Error(err)
 	}
