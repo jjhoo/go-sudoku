@@ -130,7 +130,7 @@ func NewSudoku(grid string) (*Sudoku, error) {
 
 func (s *Sudoku) initGrid(grids string) error {
 	if len(grids) != sudokuGridSize {
-		return fmt.Errorf("Grid '%s' has invalid size", grids)
+		return fmt.Errorf("Grid has invalid size '%d'", len(grids))
 	}
 
 	var row int8 = 1
@@ -856,7 +856,7 @@ func (s *Sudoku) findXWings() finderResult {
 
 func PrintGrid(grid string) error {
 	if len(grid) != sudokuGridSize {
-		return fmt.Errorf("Grid '%s' has invalid size", grid)
+		return fmt.Errorf("Grid has invalid size '%d'", len(grid))
 	}
 
 	for i, c := range grid {
