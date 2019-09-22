@@ -342,8 +342,7 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 
 	combs := newCombination(len(unums), limit)
 	for {
-		matches := []cellNumbers{}
-		others := []Pos{}
+		matchedPositions := mapset.NewSet()
 
 		var idxs intList = combs.next()
 		if idxs == nil {
@@ -352,6 +351,11 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 
 		comb := idxs.MapInt8(func(n int) int8 { return nums[n] })
 
+		set1 := mapset.NewSet()
+		for _, n := range comb {
+			set1.Add(n)
+		}
+
 		// fmt.Println("visit comb", comb)
 	OUTER:
 		for _, pos := range ucpos(cands) {
@@ -359,13 +363,7 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 			// fmt.Println("cnums", cnums)
 
 			if len(cnums.Numbers) > limit {
-				others = append(others, cnums.Pos)
 				continue OUTER
-			}
-
-			set1 := mapset.NewSet()
-			for _, n := range comb {
-				set1.Add(n)
 			}
 
 			set2 := mapset.NewSet()
@@ -375,32 +373,13 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 
 			if set2.IsSubset(set1) {
 				// fmt.Println("is subset", comb, cnums.Numbers)
-				matches = append(matches, cnums)
-			} else {
-				// fmt.Println("is not subset", comb, cnums.Numbers)
-				others = append(others, cnums.Pos)
+				matchedPositions.Add(pos)
 			}
 		}
 
-		if len(matches) == limit && len(others) > 0 {
-			// fmt.Println("matches", matches, ", others", others)
-
+		if matchedPositions.Cardinality() == limit {
 			nfound := cands.Filter(func(c Cell) bool {
-				for _, other := range others {
-					if c.Pos != other {
-						continue
-					}
-
-					// fmt.Println("check", c.Pos)
-
-					for _, n := range comb {
-						if n == c.Value {
-							// fmt.Println("found", c.Pos, n)
-							return true
-						}
-					}
-				}
-				return false
+				return !matchedPositions.Contains(c.Pos) && set1.Contains(c.Value)
 			})
 			found = append(found, nfound...)
 		}
