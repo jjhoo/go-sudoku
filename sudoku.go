@@ -358,7 +358,7 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 
 		// fmt.Println("visit comb", comb)
 	OUTER:
-		for _, pos := range ucpos(cands) {
+		for _, pos := range poss {
 			cnums := getCellNumbers(pos, cands)
 			// fmt.Println("cnums", cnums)
 
@@ -451,7 +451,7 @@ func findHiddenGroupsInSet(limit int, cands CellList) finderResult {
 			set1.Add(n)
 		}
 
-		for _, pos := range ucpos(cands) {
+		for _, pos := range poss {
 			cnums := getCellNumbers(pos, cands)
 
 			set2 := mapset.NewSet()
