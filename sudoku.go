@@ -23,6 +23,12 @@ import (
 	"unicode"
 )
 
+const (
+	sudokuBoxes = 3
+	sudokuNumbers  = 9
+	sudokuGridSize = sudokuNumbers * sudokuNumbers
+)
+
 type Sudoku struct {
 	Solved     CellList
 	Candidates CellList
@@ -34,7 +40,7 @@ type finderResult struct {
 }
 
 func (s Sudoku) getCell(row, col int8) Cell {
-	idx := (row-1)*9 + (col - 1)
+	idx := (row - 1) * sudokuNumbers + (col - 1)
 	return s.Solved[idx]
 }
 
@@ -95,7 +101,7 @@ func (s *Sudoku) validateSolved() {
 		{"row", s.getRow}, {"column", s.getColumn}, {"box", s.getBox},
 	}
 
-	for i = 1; i < 10; i++ {
+	for i = 1; i <= sudokuNumbers; i++ {
 		for _, p := range pairs {
 			set := p.fun(i)
 			if !validateSet(set) {
@@ -123,14 +129,14 @@ func NewSudoku(grid string) (*Sudoku, error) {
 }
 
 func (s *Sudoku) initGrid(grids string) error {
-	if len(grids) != 81 {
+	if len(grids) != sudokuGridSize {
 		return fmt.Errorf("Grid '%s' has invalid size", grids)
 	}
 
 	var row int8 = 1
 	var column int8 = 1
 
-	s.Solved = make(CellList, 81)
+	s.Solved = make(CellList, sudokuGridSize)
 
 	var i int
 	var c rune
@@ -143,10 +149,10 @@ func (s *Sudoku) initGrid(grids string) error {
 
 		ascii := int8(c - zero)
 
-		idx := (row-1)*9 + (column - 1)
+		idx := (row - 1) * sudokuNumbers + (column - 1)
 		s.Solved[idx] = Cell{}.init(row, column, ascii)
 
-		if (i+1)%9 == 0 {
+		if (i + 1) % sudokuNumbers == 0 {
 			row++
 			column = 1
 		} else {
@@ -160,9 +166,9 @@ func (s *Sudoku) initGrid(grids string) error {
 func (s *Sudoku) initCandidates() {
 	s.Candidates = CellList{}
 
-	for i := 1; i < 10; i++ {
-		for j := 1; j < 10; j++ {
-			for n := 1; n < 10; n++ {
+	for i := 1; i <= sudokuNumbers; i++ {
+		for j := 1; j <= sudokuNumbers; j++ {
+			for n := 1; n <= sudokuNumbers; n++ {
 				s.Candidates = append(
 					s.Candidates, Cell{}.init(int8(i), int8(j), int8(n)))
 			}
@@ -183,16 +189,18 @@ func (s *Sudoku) initCandidates() {
 func (s Sudoku) PrintGrid() {
 	fmt.Print("+-------------------+\n")
 	for i, cell := range s.Solved {
-		if (i+1)%9 == 1 {
+		if (i + 1) % sudokuNumbers == 1 {
 			fmt.Print("| ")
 		}
+
 		v := cell.Value
 		if v == 0 {
 			fmt.Printf(".")
 		} else {
 			fmt.Printf("%d", v)
 		}
-		if (i+1)%9 == 0 {
+
+		if (i + 1) % sudokuNumbers == 0 {
 			fmt.Print(" |\n")
 		} else {
 			fmt.Print(" ")
@@ -202,7 +210,7 @@ func (s Sudoku) PrintGrid() {
 }
 
 func (s Sudoku) GetGridString() string {
-	runes := make([]rune, 81)
+	runes := make([]rune, sudokuGridSize)
 
 	for i, cell := range s.Solved {
 		runes[i] = '0' + rune(cell.Value)
@@ -232,7 +240,7 @@ func (s Sudoku) ucpos() []Pos {
 
 func (s *Sudoku) updateSolved(solved CellList) {
 	for _, sol := range solved {
-		idx := (sol.Pos.Row-1)*9 + (sol.Pos.Column - 1)
+		idx := (sol.Pos.Row-1)*sudokuNumbers + (sol.Pos.Column - 1)
 		s.Solved[idx].Value = sol.Value
 
 		s.Candidates = s.Candidates.Filter(func(c Cell) bool {
@@ -275,7 +283,7 @@ func (s *Sudoku) finder(cf cellFinder) finderResult {
 	eliminated := CellList{}
 
 	for _, fun := range funs {
-		for i := 1; i < 10; i++ {
+		for i := 1; i <= sudokuNumbers; i++ {
 			cells := fun(int8(i))
 
 			if len(cells) == 0 {
@@ -510,7 +518,7 @@ func (s *Sudoku) findPointingPairs() finderResult {
 	found := CellList{}
 
 	var boxnum int8
-	for boxnum = 1; boxnum < 10; boxnum++ {
+	for boxnum = 1; boxnum <= sudokuNumbers; boxnum++ {
 		boxCells := s.getCandidateBox(boxnum)
 		nums := uniqueNumbers(boxCells)
 
@@ -519,7 +527,7 @@ func (s *Sudoku) findPointingPairs() finderResult {
 				return c.Value == n
 			})
 
-			if !(len(cells) == 2 || len(cells) == 3) {
+			if len(cells) < 2 {
 				continue
 			}
 
@@ -561,7 +569,7 @@ func (s *Sudoku) findBoxlineReduction() finderResult {
 
 	for _, fpair := range fpairs {
 		var n int8
-		for n = 1; n < 10; n++ {
+		for n = 1; n <= sudokuNumbers; n++ {
 			cells := fpair.getCells(n)
 			if len(cells) < 2 {
 				// No panic, even though other finders should have
@@ -630,7 +638,7 @@ func (s *Sudoku) findYWings() finderResult {
 	}
 
 	poss := []Pos{}
-	for key, _ := range interesting {
+	for key := range interesting {
 		poss = append(poss, key)
 	}
 
@@ -756,7 +764,7 @@ func (s *Sudoku) findXWings() finderResult {
 				continue
 			}
 
-			for j = i + 1; j <= 9; j++ {
+			for j = i + 1; j <= sudokuNumbers; j++ {
 				line2 := fp.linef(j)
 				if len(line2) <= 2 {
 					continue
@@ -847,13 +855,13 @@ func (s *Sudoku) findXWings() finderResult {
 }
 
 func PrintGrid(grid string) error {
-	if len(grid) != 81 {
+	if len(grid) != sudokuGridSize {
 		return fmt.Errorf("Grid '%s' has invalid size", grid)
 	}
 
 	for i, c := range grid {
 		fmt.Printf("%c", c)
-		if (i+1)%9 == 0 {
+		if (i + 1) % sudokuNumbers == 0 {
 			fmt.Print("\n")
 		} else {
 			fmt.Print(" ")

@@ -29,7 +29,7 @@ type Pos struct {
 func (p Pos) init(row int8, col int8) Pos {
 	p.Row = row
 	p.Column = col
-	p.Box = (((row - 1) / 3) * 3 + ((col - 1) / 3)) + 1
+	p.Box = (((row - 1) / sudokuBoxes) * sudokuBoxes + ((col - 1) / sudokuBoxes)) + 1
 
 	return p
 }
