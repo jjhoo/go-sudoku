@@ -1,0 +1,9 @@
+TODO
+====
+
+* Implement more finders
+* Implement a logger / tracer
+   - Could be used for testing
+
+* Implement means to collect statistics
+   - Could be used for testing
