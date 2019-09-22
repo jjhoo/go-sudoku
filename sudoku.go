@@ -439,6 +439,94 @@ func (s *Sudoku) findNakedGroups4() finderResult {
 	})
 }
 
+func findHiddenGroupsInSet(limit int, cands CellList) finderResult {
+	// fmt.Println("naked set", limit)
+	poss := ucpos(cands)
+
+	if len(poss) < (limit + 1) {
+		return finderResult{Solved: nil, Eliminated: nil}
+	}
+
+	nums := numbers(cands)
+	sortInt8(nums)
+
+	ncounts := numberCounts(nums)
+	unums := ncounts.MapInt8(func(nc numCount) int8 { return nc.num })
+
+	// fmt.Println("counts", cands, ncounts, unums)
+	found := CellList{}
+
+	combs := newCombination(len(unums), limit)
+	for {
+		matchedPositions := mapset.NewSet()
+
+		var idxs intList = combs.next()
+		if idxs == nil {
+			break
+		}
+
+		comb := idxs.MapInt8(func(n int) int8 { return unums[n] })
+
+		set1 := mapset.NewSet()
+		for _, n := range comb {
+			set1.Add(n)
+		}
+
+		for _, pos := range ucpos(cands) {
+			cnums := getCellNumbers(pos, cands)
+
+			set2 := mapset.NewSet()
+			for _, n := range cnums.Numbers {
+				set2.Add(n)
+			}
+
+			if set2.Intersect(set1).Cardinality() > 0 {
+				matchedPositions.Add(pos)
+			}
+		}
+
+		if matchedPositions.Cardinality() == limit {
+			nfound := cands.Filter(func(c Cell) bool {
+				// true if position matches but number is not in the combination
+				return matchedPositions.Contains(c.Pos) && !set1.Contains(c.Value)
+			})
+			found = append(found, nfound...)
+		}
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
+func (s *Sudoku) findHiddenGroups2() finderResult {
+	return s.finder(func(cells CellList) finderResult {
+		found := findHiddenGroupsInSet(2, cells)
+
+		found.Eliminated = uniqueCells(found.Eliminated)
+
+		return found
+	})
+}
+
+func (s *Sudoku) findHiddenGroups3() finderResult {
+	return s.finder(func(cells CellList) finderResult {
+		found := findHiddenGroupsInSet(3, cells)
+
+		found.Eliminated = uniqueCells(found.Eliminated)
+
+		return found
+	})
+}
+
+func (s *Sudoku) findHiddenGroups4() finderResult {
+	return s.finder(func(cells CellList) finderResult {
+		found := findHiddenGroupsInSet(4, cells)
+
+		found.Eliminated = uniqueCells(found.Eliminated)
+
+		return found
+	})
+}
+
 func (s *Sudoku) findPointingPairs() finderResult {
 	found := CellList{}
 
@@ -802,7 +890,10 @@ func (s *Sudoku) Solve() bool {
 		s.findSingles,
 		s.findNakedGroups2,
 		s.findNakedGroups3,
+		s.findHiddenGroups2,
+		s.findHiddenGroups3,
 		s.findNakedGroups4,
+		s.findHiddenGroups4,
 		s.findPointingPairs,
 		s.findBoxlineReduction,
 		s.findXWings,

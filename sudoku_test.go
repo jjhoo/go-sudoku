@@ -60,6 +60,21 @@ func TestGrid4(t *testing.T) {
 	s.PrintGrid()
 }
 
+func TestGrid5(t *testing.T) {
+	grid := "300000000970010000600583000200000900500621003008000005000435002000090056000000001"
+
+	s := Sudoku{}
+
+	err := s.initGrid(grid)
+	if err != nil {
+		t.Error(err)
+	}
+
+	s.initCandidates()
+	s.Solve()
+	s.PrintGrid()
+}
+
 func TestBadInput1(t *testing.T) {
 	// Test invalid characters in input
 	grid := "CAT21003009000060000000500080403006007000800500700040003000000020000700800195000"
