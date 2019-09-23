@@ -755,6 +755,132 @@ func (s *Sudoku) findYWings() finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
+func (s *Sudoku) findXYZWings() finderResult {
+	found := CellList{}
+	interesting := make(map[Pos][]int8)
+
+	prev := s.Candidates[0]
+	nums := []int8{prev.Value}
+
+	for _, cell := range s.Candidates[1:] {
+		if prev.Pos == cell.Pos {
+			nums = append(nums, cell.Value)
+		} else {
+			if len(nums) == 2 || len(nums) == 3 {
+				interesting[prev.Pos] = nums
+			}
+
+			nums = []int8{cell.Value}
+		}
+		prev = cell
+	}
+
+	if len(nums) == 2 || len(nums) == 3 {
+		interesting[prev.Pos] = nums
+	}
+
+	poss := []Pos{}
+	for key := range interesting {
+		poss = append(poss, key)
+	}
+
+	// fmt.Println("y-wing interesting", interesting)
+	combs := newCombination(len(poss), 3)
+
+	for {
+		var idxs intList = combs.next()
+		if idxs == nil {
+			break
+		}
+
+		out := make(PosList, len(idxs))
+
+		nums := int8List{}
+
+		for i, n := range idxs {
+			out[i] = poss[n]
+
+			nums = append(nums, interesting[poss[n]]...)
+		}
+
+		sortInt8(nums)
+		nums = dedupeInt8(nums)
+
+		if len(nums) != 3 {
+			continue
+		}
+
+		// fmt.Println("y-wing 1", out, nums)
+
+		perms := newPermutation(len(out))
+		for {
+			var idxs intList = perms.next()
+			if idxs == nil {
+				break
+			}
+
+			out2 := idxs.MapPos(func(n int) Pos { return out[n] })
+
+			w1, pivot, w2 := out2[0], out2[1], out2[2]
+
+			// Avoid duplicate wings
+			if w2.less(&w1) {
+				continue
+			}
+
+			if !(pivot.sees(w1) && pivot.sees(w2)) {
+				continue
+			}
+
+			if w1.sees(pivot) && w1.sees(w2) {
+				// fmt.Println("xyz-wing would be a naked triple", w1, pivot, w2)
+				continue
+			}
+
+			fun := func(p Pos) mapset.Set {
+				set := mapset.NewSet()
+
+				for _, n := range interesting[p] {
+					set.Add(n)
+				}
+
+				return set
+			}
+
+			pset := fun(pivot)
+			if pset.Cardinality() != 3 {
+				continue
+			}
+
+			set1 := fun(w1)
+			set2 := fun(w2)
+
+			// wings have common number
+			nset := set1.Intersect(set2)
+
+			if !(nset.Cardinality() == 1 && pset.Equal(set1.Union(set2))) {
+				continue
+			}
+
+			// fmt.Println("xyz-wing", w1, pivot, w2, set1, set2, pset)
+
+			common := []int8{}
+			for _, n := range nset.ToSlice() {
+				common = append(common, n.(int8))
+			}
+			n := common[0]
+
+			nfound := s.Candidates.Filter(func(c Cell) bool {
+				return c.Value == n && c.Pos.sees(pivot) && c.Pos.sees(w1) && c.Pos.sees(w2)
+			})
+
+			found = append(found, nfound...)
+		}
+	}
+
+	return finderResult{Solved: nil, Eliminated: found}
+}
+
 func (s *Sudoku) findXWings() finderResult {
 	type pair struct {
 		linef     func(int8) CellList
@@ -909,6 +1035,7 @@ func (s *Sudoku) Solve() bool {
 		{fun: s.findBoxlineReduction, name: "box/line reduction"},
 		{fun: s.findXWings, name: "x-wing"},
 		{fun: s.findYWings, name: "y-wing"},
+		{fun: s.findXYZWings, name: "xyz-wing"},
 	}
 
 	// fmt.Println("begin", len(s.Candidates))

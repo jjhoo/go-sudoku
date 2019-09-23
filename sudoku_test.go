@@ -52,6 +52,11 @@ func TestGrid5(t *testing.T) {
 	solvableSudoku(t, grid)
 }
 
+func TestGrid6(t *testing.T) {
+	grid := "000704005020010070000080002090006250600070008053200010400090000030060090200407000"
+	solvableSudoku(t, grid)
+}
+
 func TestBadInput1(t *testing.T) {
 	// Test invalid characters in input
 	grid := "CAT921003009000060000000500080403006007000800500700040003000000020000700800195000"
