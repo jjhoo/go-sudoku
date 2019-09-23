@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	sudokuBoxes = 3
+	sudokuBoxes    = 3
 	sudokuNumbers  = 9
 	sudokuGridSize = sudokuNumbers * sudokuNumbers
 )
@@ -32,6 +32,21 @@ const (
 type Sudoku struct {
 	Solved     CellList
 	Candidates CellList
+
+	enableLogging bool
+	logger        Logger
+}
+
+func (s Sudoku) logEliminated(strategy string, cells ...Cell) {
+	if s.enableLogging && s.logger != nil {
+		s.logger.Eliminated(strategy, cells...)
+	}
+}
+
+func (s Sudoku) logSolved(strategy string, cells ...Cell) {
+	if s.enableLogging && s.logger != nil {
+		s.logger.Solved(strategy, cells...)
+	}
 }
 
 type finderResult struct {
@@ -116,7 +131,7 @@ func (s *Sudoku) validate() {
 }
 
 func NewSudoku(grid string) (*Sudoku, error) {
-	s := Sudoku{}
+	s := Sudoku{logger: DefaultLogger{}, enableLogging: false}
 
 	err := s.initGrid(grid)
 	if err != nil {
@@ -126,6 +141,10 @@ func NewSudoku(grid string) (*Sudoku, error) {
 	s.initCandidates()
 
 	return &s, nil
+}
+
+func (s *Sudoku) EnableLogging(state bool) {
+	s.enableLogging = state
 }
 
 func (s *Sudoku) initGrid(grids string) error {
@@ -872,19 +891,24 @@ func PrintGrid(grid string) error {
 }
 
 func (s *Sudoku) Solve() bool {
-	finders := []func() finderResult{
-		s.findSinglesSimple,
-		s.findSingles,
-		s.findNakedGroups2,
-		s.findNakedGroups3,
-		s.findHiddenGroups2,
-		s.findHiddenGroups3,
-		s.findNakedGroups4,
-		s.findHiddenGroups4,
-		s.findPointingPairs,
-		s.findBoxlineReduction,
-		s.findXWings,
-		s.findYWings,
+	type finderFunc struct {
+		fun  func() finderResult
+		name string
+	}
+
+	finders := []finderFunc{
+		{fun: s.findSinglesSimple, name: "singles (simple)"},
+		{fun: s.findSingles, name: "singles"},
+		{fun: s.findNakedGroups2, name: "naked pairs"},
+		{fun: s.findNakedGroups3, name: "naked triples"},
+		{fun: s.findHiddenGroups2, name: "hidden pairs"},
+		{fun: s.findHiddenGroups3, name: "hidden triples"},
+		{fun: s.findNakedGroups4, name: "naked quads"},
+		{fun: s.findHiddenGroups4, name: "hidden quads"},
+		{fun: s.findPointingPairs, name: "pointing pairs"},
+		{fun: s.findBoxlineReduction, name: "box/line reduction"},
+		{fun: s.findXWings, name: "x-wing"},
+		{fun: s.findYWings, name: "y-wing"},
 	}
 
 	// fmt.Println("begin", len(s.Candidates))
@@ -899,16 +923,17 @@ PROGRESS:
 
 		// fmt.Println("Finder", finderIdx)
 
-		res := finders[finderIdx]()
+		finder := finders[finderIdx]
+		res := finder.fun()
 
 		if len(res.Solved) > 0 {
-			fmt.Println("Found", res.Solved)
+			s.logSolved(finder.name, res.Solved...)
 			s.updateSolved(res.Solved)
 		}
 		s.validate()
 
 		if len(res.Eliminated) > 0 {
-			fmt.Println("Eliminated", res.Eliminated)
+			s.logEliminated(finder.name, res.Eliminated...)
 			s.updateCandidates(res.Eliminated)
 		}
 
@@ -917,7 +942,7 @@ PROGRESS:
 		}
 
 		if len(res.Solved) != 0 || len(res.Eliminated) != 0 {
-			fmt.Println("progress", len(s.Candidates))
+			// fmt.Println("progress", len(s.Candidates))
 			finderIdx = 0
 			continue PROGRESS
 		}
