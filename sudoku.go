@@ -415,7 +415,7 @@ func findNakedGroupsInSet(limit int, cands CellList) finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
-func (s *Sudoku) findNakedGroups2() finderResult {
+func (s *Sudoku) findNakedPairs() finderResult {
 	return s.finder(func(cells CellList) finderResult {
 		found := findNakedGroupsInSet(2, cells)
 
@@ -425,7 +425,7 @@ func (s *Sudoku) findNakedGroups2() finderResult {
 	})
 }
 
-func (s *Sudoku) findNakedGroups3() finderResult {
+func (s *Sudoku) findNakedTriples() finderResult {
 	return s.finder(func(cells CellList) finderResult {
 		found := findNakedGroupsInSet(3, cells)
 
@@ -435,7 +435,7 @@ func (s *Sudoku) findNakedGroups3() finderResult {
 	})
 }
 
-func (s *Sudoku) findNakedGroups4() finderResult {
+func (s *Sudoku) findNakedQuads() finderResult {
 	return s.finder(func(cells CellList) finderResult {
 		found := findNakedGroupsInSet(4, cells)
 
@@ -503,7 +503,7 @@ func findHiddenGroupsInSet(limit int, cands CellList) finderResult {
 	return finderResult{Solved: nil, Eliminated: found}
 }
 
-func (s *Sudoku) findHiddenGroups2() finderResult {
+func (s *Sudoku) findHiddenPairs() finderResult {
 	return s.finder(func(cells CellList) finderResult {
 		found := findHiddenGroupsInSet(2, cells)
 
@@ -513,7 +513,7 @@ func (s *Sudoku) findHiddenGroups2() finderResult {
 	})
 }
 
-func (s *Sudoku) findHiddenGroups3() finderResult {
+func (s *Sudoku) findHiddenTriples() finderResult {
 	return s.finder(func(cells CellList) finderResult {
 		found := findHiddenGroupsInSet(3, cells)
 
@@ -523,7 +523,7 @@ func (s *Sudoku) findHiddenGroups3() finderResult {
 	})
 }
 
-func (s *Sudoku) findHiddenGroups4() finderResult {
+func (s *Sudoku) findHiddenQuads() finderResult {
 	return s.finder(func(cells CellList) finderResult {
 		found := findHiddenGroupsInSet(4, cells)
 
@@ -1025,12 +1025,12 @@ func (s *Sudoku) Solve() bool {
 	finders := []finderFunc{
 		{fun: s.findSinglesSimple, name: "singles (simple)"},
 		{fun: s.findSingles, name: "singles"},
-		{fun: s.findNakedGroups2, name: "naked pairs"},
-		{fun: s.findNakedGroups3, name: "naked triples"},
-		{fun: s.findHiddenGroups2, name: "hidden pairs"},
-		{fun: s.findHiddenGroups3, name: "hidden triples"},
-		{fun: s.findNakedGroups4, name: "naked quads"},
-		{fun: s.findHiddenGroups4, name: "hidden quads"},
+		{fun: s.findNakedPairs, name: "naked pairs"},
+		{fun: s.findNakedTriples, name: "naked triples"},
+		{fun: s.findHiddenPairs, name: "hidden pairs"},
+		{fun: s.findHiddenTriples, name: "hidden triples"},
+		{fun: s.findNakedQuads, name: "naked quads"},
+		{fun: s.findHiddenQuads, name: "hidden quads"},
 		{fun: s.findPointingPairs, name: "pointing pairs"},
 		{fun: s.findBoxlineReduction, name: "box/line reduction"},
 		{fun: s.findXWings, name: "x-wing"},
