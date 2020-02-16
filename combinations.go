@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Jani J. Hakala <jjhakala@gmail.com> Jyväskylä, Finland
+// Copyright (c) 2019-2020 Jani J. Hakala <jjhakala@gmail.com>, Finland
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU Affero General Public License as
@@ -19,8 +19,7 @@ package sudoku
 // Combination intenal state data.
 type combination struct {
 	cjs    []int
-	length int
-	koo    int
+	n      int
 	j      int
 	k      int
 
@@ -30,16 +29,16 @@ type combination struct {
 // Knuth, algorithm T
 
 // newCombination initialize a combination generator of length elements.
-func newCombination(length, koo int) *combination {
-	c := combination{visitFlag: true, length: length, koo: koo, j: koo, k: koo}
+func newCombination(n, k int) *combination {
+	c := combination{visitFlag: true, n: n, j: k, k: k}
 
-	c.cjs = make([]int, koo+1, koo+3)
+	c.cjs = make([]int, k + 1, k + 3)
 
-	for i := 0; i <= koo; i++ {
+	for i := 0; i <= k; i++ {
 		c.cjs[i] = i - 1
 	}
 
-	c.cjs = append(c.cjs, c.length, 0)
+	c.cjs = append(c.cjs, c.n, 0)
 
 	return &c
 }
