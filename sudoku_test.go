@@ -2,7 +2,7 @@ package sudoku_test
 
 import (
 	"github.com/jjhoo/go-sudoku"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 
 	"testing"
 )
