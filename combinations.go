@@ -79,17 +79,16 @@ func (c *combination) next() []int {
 
 	// T4
 	c.j = 2
-	cont := true
 	x := -1
 
-	for cont {
+	for {
 		c.cjs[c.j-1] = c.j - 2
 		x = c.cjs[c.j] + 1
 
 		if x == c.cjs[c.j+1] {
 			c.j++
 		} else {
-			cont = false
+			break
 		}
 	}
 

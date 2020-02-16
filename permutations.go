@@ -60,15 +60,14 @@ func (p *permutation) next() []int {
 
 	// L2
 	j := p.length - 1
-	cont := true
 
-	for cont {
+	for {
 		if p.ajs[j] >= p.ajs[j+1] {
 			j--
 		} else if p.ajs[j] < p.ajs[j+1] {
-			cont = false
+			break
 		} else if j == 0 {
-			cont = false
+			break
 		}
 	}
 
@@ -80,11 +79,10 @@ func (p *permutation) next() []int {
 	// L3
 	l := p.length
 	if p.ajs[j] >= p.ajs[l] {
-		cont = true
-		for cont {
+		for {
 			l--
 			if p.ajs[j] < p.ajs[l] {
-				cont = false
+				break
 			}
 		}
 	}
