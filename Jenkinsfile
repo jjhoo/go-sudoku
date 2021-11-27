@@ -1,7 +1,7 @@
 node {
     checkout scm
     def customImage = docker.build("leiningen-image:${env.BUILD_ID}", "-f .jenkins/docker/Dockerfile .jenkins/docker")
-    withCredentials([string(credentialsId: 'COVERAGE_TOKEN', variable: 'COVERAGE_TOKEN')]) {
+    withCredentials([string(credentialsId: 'coverage-token-for-go-sudoku', variable: 'COVERAGE_TOKEN')]) {
         customImage.inside('-v $HOME/go:/home/jenkins/go') {
             stage('Build') {
                sh 'go build'
