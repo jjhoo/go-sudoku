@@ -10,7 +10,7 @@ node {
                sh 'go test -coverprofile=coverage.txt -covermode=atomic'
             }
             stage('Upload coverage to codecov') {
-               sh './scripts/codecov.sh -t $COVERAGE_TOKEN'
+               sh './scripts/codecov.sh -t $COVERAGE_TOKEN -K'
             }
         }
     }
