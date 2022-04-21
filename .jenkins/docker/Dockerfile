@@ -1,5 +1,7 @@
 FROM debian:bullseye-slim
 
+ARG JENKINS_UID=1001
+ENV DEBIAN_FRONTEND teletype
 ENV GOPROXY "direct"
 
 RUN apt-get update
