@@ -1,6 +1,7 @@
 node {
     checkout scm
-    def customImage = docker.build("build-go-sudoku:${env.BUILD_ID}", "-f .jenkins/docker/Dockerfile .jenkins/docker")
+    def userId = sh(script: "id -u ${USER}", returnStdout: true).trim()
+    def customImage = docker.build("build-go-sudoku:${env.BUILD_ID}", "--build-arg JENKINS_UID=${userId} -f .jenkins/docker/Dockerfile .jenkins/docker")
     withCredentials([string(credentialsId: 'coverage-token', variable: 'COVERAGE_TOKEN')]) {
         customImage.inside('-v $HOME/go:/home/jenkins/go') {
             stage('Build') {
