@@ -7,7 +7,7 @@ node {
 
     withCredentials([string(credentialsId: 'coverage-token', variable: 'COVERAGE_TOKEN')]) {
         cache(maxCacheSize: 250, defaultBranch: 'master', caches: [
-            [$class: 'ArbitraryFileCache', path: "${env.WORKSPACE_TMP}/go", cacheValidityDecidingFile: 'go.sum', compressionMethod: 'TARGZ']
+            [$class: 'ArbitraryFileCache', path: "${env.WORKSPACE_TMP}/go", cacheValidityDecidingFile: 'go.mod', compressionMethod: 'TARGZ']
         ]) {
             customImage.inside("-v ${env.WORKSPACE_TMP}/go:/home/jenkins/go") {
                 stage('Build') {
