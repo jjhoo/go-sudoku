@@ -5,7 +5,7 @@ node {
 
     sh("""
        if [ -d ${WORKSPACE_TMP}/go ]; then
-         find ${WORKSPACE_TMP}/go -type d ! -writable -exec chmod u+w '{}' \;
+         find ${WORKSPACE_TMP}/go -type d ! -writable -exec chmod u+w '{}' ;
          rm -rf ${WORKSPACE_TMP}/go'
        fi
        mkdir -p ${WORKSPACE_TMP}/go'
