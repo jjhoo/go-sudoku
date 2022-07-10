@@ -4,18 +4,18 @@ node {
     def customImage = docker.build("build-go-sudoku:${env.BUILD_ID}", "--build-arg JENKINS_UID=${userId} -f .jenkins/docker/Dockerfile .jenkins/docker")
 
     sh("""
-       if [ -d ${WORKSPACE_TMP}/${env.BUILD_ID}/go ]; then
-         find ${WORKSPACE_TMP}/${env.BUILD_ID}/go -type d ! -writable -exec chmod u+w {} ";"
-         rm -rf ${WORKSPACE_TMP}/${env.BUILD_ID}/go
+       if [ -d ${WORKSPACE_TMP}/go ]; then
+         find ${WORKSPACE_TMP}/go -type d ! -writable -exec chmod u+w {} ";"
+         rm -rf ${WORKSPACE_TMP}/go
        fi
-       mkdir -p ${WORKSPACE_TMP}/${env.BUILD_ID}/go
+       mkdir -p ${WORKSPACE_TMP}/go
        """)
 
     withCredentials([string(credentialsId: 'coverage-token', variable: 'COVERAGE_TOKEN')]) {
         cache(maxCacheSize: 250, defaultBranch: 'master', caches: [
-            [$class: 'ArbitraryFileCache', path: "${env.WORKSPACE_TMP}/${env.BUILD_ID}/go", cacheValidityDecidingFile: 'go.mod', compressionMethod: 'TARGZ']
+            [$class: 'ArbitraryFileCache', path: "${env.WORKSPACE_TMP}/go", cacheValidityDecidingFile: 'go.sum', compressionMethod: 'TARGZ']
         ]) {
-            customImage.inside("-v ${env.WORKSPACE_TMP}/${env.BUILD_ID}/go:/home/jenkins/go") {
+            customImage.inside("-v ${env.WORKSPACE_TMP}/go:/home/jenkins/go") {
                 stage('Build') {
                    sh 'go build'
                 }
@@ -29,9 +29,9 @@ node {
         }
     }
     sh("""
-       if [ -d ${WORKSPACE_TMP}/${env.BUILD_ID} ]; then
-         find ${WORKSPACE_TMP}/${env.BUILD_ID} -type d ! -writable -exec chmod u+w {} ";"
-         rm -rf ${WORKSPACE_TMP}/${env.BUILD_ID}
+       if [ -d ${WORKSPACE_TMP}/go ]; then
+         find ${WORKSPACE_TMP}/go -type d ! -writable -exec chmod u+w {} ";"
+         rm -rf ${WORKSPACE_TMP}/go
        fi
        """)
 }
