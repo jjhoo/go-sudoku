@@ -11,6 +11,7 @@ RUN apt-get install -y \
     golang
 
 RUN useradd -u $JENKINS_UID jenkins -m
-RUN mkdir /home/jenkins/go
 
+WORKDIR /home/jenkins
 USER jenkins
+RUN mkdir /home/jenkins/go
