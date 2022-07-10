@@ -12,5 +12,6 @@ RUN apt-get install -y \
 
 RUN useradd -u $JENKINS_UID jenkins -m
 
+WORKDIR /home/jenkins
 USER jenkins
 RUN mkdir /home/jenkins/go
