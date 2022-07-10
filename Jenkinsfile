@@ -3,7 +3,7 @@ node {
     def userId = sh(script: "id -u ${USER}", returnStdout: true).trim()
     def customImage = docker.build("build-go-sudoku:${env.BUILD_ID}", "--build-arg JENKINS_UID=${userId} -f .jenkins/docker/Dockerfile .jenkins/docker")
 
-    sh 'mkdir -p ${env.WORKSPACE_TMP}/go'
+    sh 'mkdir -p ${WORKSPACE_TMP}/go'
 
     withCredentials([string(credentialsId: 'coverage-token', variable: 'COVERAGE_TOKEN')]) {
         cache(maxCacheSize: 250, defaultBranch: 'master', caches: [
